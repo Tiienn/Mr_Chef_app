@@ -90,8 +90,8 @@ describe('OrderPage', () => {
       fireEvent.click(itemCard);
     });
 
-    // Check that cart shows 1 item
-    expect(screen.getByText(/View Cart \(1 items\)/i)).toBeInTheDocument();
+    // Check that order summary shows 1 item
+    expect(screen.getByText('1 item')).toBeInTheDocument();
   });
 
   it('increments quantity when same item is clicked multiple times', async () => {
@@ -104,10 +104,10 @@ describe('OrderPage', () => {
       fireEvent.click(itemCard);
     });
 
-    expect(screen.getByText(/View Cart \(3 items\)/i)).toBeInTheDocument();
+    expect(screen.getByText('3 items')).toBeInTheDocument();
   });
 
-  it('opens cart panel when view cart button is clicked', async () => {
+  it('opens cart panel when view full cart button is clicked', async () => {
     await renderAndWait();
 
     // Add item to cart
@@ -116,16 +116,19 @@ describe('OrderPage', () => {
       fireEvent.click(itemCard);
     });
 
-    // Click view cart
+    // Expand order summary panel and click View Full Cart
     await act(async () => {
-      fireEvent.click(screen.getByText(/View Cart/i));
+      fireEvent.click(screen.getByRole('button', { name: /expand order summary/i }));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /view full cart/i }));
     });
 
     // Check cart panel is open
     expect(screen.getByText('Your Order')).toBeInTheDocument();
   });
 
-  it('displays correct total in cart button', async () => {
+  it('displays correct total in order summary', async () => {
     await renderAndWait();
 
     // Add item to cart (price is 1200 cents = $12.00)
@@ -134,9 +137,9 @@ describe('OrderPage', () => {
       fireEvent.click(itemCard);
     });
 
-    // Check the view cart button shows the total
-    const viewCartButton = screen.getByText(/View Cart \(1 items\) - \$12\.00/i);
-    expect(viewCartButton).toBeInTheDocument();
+    // Check the order summary shows the total (there will be multiple $12.00 - card price and summary total)
+    const prices = screen.getAllByText('$12.00');
+    expect(prices.length).toBeGreaterThanOrEqual(2); // card price + order summary total
   });
 
   it('can increase quantity in cart panel', async () => {
@@ -148,9 +151,9 @@ describe('OrderPage', () => {
       fireEvent.click(itemCard);
     });
 
-    // Open cart
+    // Open cart via header button
     await act(async () => {
-      fireEvent.click(screen.getByText(/View Cart/i));
+      fireEvent.click(screen.getByRole('button', { name: /open cart/i }));
     });
 
     // Find and click increase button
@@ -162,7 +165,6 @@ describe('OrderPage', () => {
     // The cart panel should show the updated quantity
     const cartPanel = screen.getByText('Your Order').closest('div')?.parentElement;
     expect(cartPanel).toBeInTheDocument();
-    // View cart button in bottom bar should show 2 items now (cart panel is open so button is hidden)
   });
 
   it('can decrease quantity in cart panel', async () => {
@@ -175,9 +177,9 @@ describe('OrderPage', () => {
       fireEvent.click(itemCard);
     });
 
-    // Open cart
+    // Open cart via header button
     await act(async () => {
-      fireEvent.click(screen.getByText(/View Cart/i));
+      fireEvent.click(screen.getByRole('button', { name: /open cart/i }));
     });
 
     // Find and click decrease button
@@ -200,9 +202,9 @@ describe('OrderPage', () => {
       fireEvent.click(itemCard);
     });
 
-    // Open cart
+    // Open cart via header button
     await act(async () => {
-      fireEvent.click(screen.getByText(/View Cart/i));
+      fireEvent.click(screen.getByRole('button', { name: /open cart/i }));
     });
 
     // Decrease quantity to 0
@@ -224,9 +226,9 @@ describe('OrderPage', () => {
       fireEvent.click(itemCard);
     });
 
-    // Open cart
+    // Open cart via header button
     await act(async () => {
-      fireEvent.click(screen.getByText(/View Cart/i));
+      fireEvent.click(screen.getByRole('button', { name: /open cart/i }));
     });
 
     // Click delete button
@@ -249,7 +251,7 @@ describe('OrderPage', () => {
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByText(/View Cart/i));
+      fireEvent.click(screen.getByRole('button', { name: /open cart/i }));
     });
 
     // Close cart
@@ -339,7 +341,7 @@ describe('OrderPage', () => {
       fireEvent.keyDown(itemCard, { key: 'Enter' });
     });
 
-    expect(screen.getByText(/View Cart \(1 items\)/i)).toBeInTheDocument();
+    expect(screen.getByText('1 item')).toBeInTheDocument();
   });
 
   it('allows keyboard navigation with space key', async () => {
@@ -352,7 +354,7 @@ describe('OrderPage', () => {
       fireEvent.keyDown(itemCard, { key: ' ' });
     });
 
-    expect(screen.getByText(/View Cart \(1 items\)/i)).toBeInTheDocument();
+    expect(screen.getByText('1 item')).toBeInTheDocument();
   });
 
   it('calculates total correctly for multiple items', async () => {

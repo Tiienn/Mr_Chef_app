@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Plus, Minus, Trash2, ShoppingCart, X } from 'lucide-react';
+import { OrderSummaryPanel } from '@/components/order/OrderSummaryPanel';
 import type { MenuItem } from '@/db/schema';
 
 interface CartItem {
@@ -213,16 +214,13 @@ export default function OrderPage() {
         </Tabs>
       </main>
 
-      {/* Cart Summary Bar (when cart has items) */}
-      {cart.length > 0 && !isCartOpen && (
-        <div className="sticky bottom-0 border-t bg-background p-4">
-          <Button
-            className="w-full min-h-[44px]"
-            onClick={() => setIsCartOpen(true)}
-          >
-            View Cart ({getCartItemCount()} items) - {formatPrice(getCartTotal())}
-          </Button>
-        </div>
+      {/* Collapsible Order Summary Panel */}
+      {!isCartOpen && (
+        <OrderSummaryPanel
+          cart={cart}
+          onUpdateQuantity={updateQuantity}
+          onViewFullCart={() => setIsCartOpen(true)}
+        />
       )}
 
       {/* Cart Panel (Slide-up drawer) */}
