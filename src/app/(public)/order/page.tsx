@@ -6,8 +6,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Plus, Minus, Trash2, ShoppingCart, X } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, X, Loader2 } from 'lucide-react';
 import { OrderSummaryPanel } from '@/components/order/OrderSummaryPanel';
+import { useToast } from '@/hooks/use-toast';
 import type { MenuItem } from '@/db/schema';
 
 interface CartItem {
@@ -30,6 +31,8 @@ export default function OrderPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [tableNumber, setTableNumber] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     async function loadMenuItems() {
@@ -108,6 +111,52 @@ export default function OrderPage() {
   const getCartItemQuantity = (menuItemId: number) => {
     const item = cart.find((item) => item.menuItem.id === menuItemId);
     return item?.quantity || 0;
+  };
+
+  const submitOrder = async () => {
+    if (cart.length === 0 || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: cart.map((item) => ({
+            menuItemId: item.menuItem.id,
+            quantity: item.quantity,
+            notes: item.notes,
+          })),
+          tableNumber: tableNumber || undefined,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCart([]);
+        setTableNumber('');
+        setIsCartOpen(false);
+        toast({
+          title: 'Order Placed',
+          description: `Order #${data.orderNumber} has been submitted.`,
+        });
+      } else {
+        const error = await response.json();
+        toast({
+          title: 'Order Failed',
+          description: error.error || 'Failed to place order. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch {
+      toast({
+        title: 'Order Failed',
+        description: 'Failed to place order. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isLoading) {
@@ -329,8 +378,19 @@ export default function OrderPage() {
                     <span>Total</span>
                     <span>{formatPrice(getCartTotal())}</span>
                   </div>
-                  <Button className="mt-4 w-full min-h-[44px]" disabled>
-                    Place Order (Coming Soon)
+                  <Button
+                    className="mt-4 w-full min-h-[44px]"
+                    onClick={submitOrder}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Placing Order...
+                      </>
+                    ) : (
+                      'Place Order'
+                    )}
                   </Button>
                 </div>
               </>

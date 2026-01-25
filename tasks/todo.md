@@ -1,37 +1,33 @@
-# Task: Add Table Number Input Field to Order Summary Panel
+# Task: Submit Order Functionality
 
 ## Plan
-Add an optional table number input field at the top of the order summary panel's expanded content. The field should be managed via props (controlled component pattern) to keep state in the parent page component, consistent with how cart items are managed.
+
+Create the submit order functionality that:
+1. Saves order to database with status "pending"
+2. Auto-generates order number (daily sequential: 001, 002, etc.)
 
 ## Todo Items
-- [x] Add tableNumber prop and onTableNumberChange callback to OrderSummaryPanel
-- [x] Add table number input field at top of expanded collapsible content
-- [x] Update order page to manage tableNumber state
-- [x] Write tests for the table number functionality
-- [x] Run tests and ensure they pass
-- [x] Run linting and ensure it passes
-- [x] Commit changes
 
-## Review
+- [ ] Create POST `/api/orders` endpoint with order number generation logic
+- [ ] Update OrderPage to call the API and handle submission
+- [ ] Add success/error feedback with toast notifications
+- [ ] Write tests for the API endpoint
+- [ ] Run tests and linting
+- [ ] Commit changes
 
-### Changes Made
-1. **OrderSummaryPanel.tsx**: Added `tableNumber` and `onTableNumberChange` optional props to the component interface and function signature. Added a conditional table number input field at the top of the expanded collapsible content (only renders when `onTableNumberChange` is provided).
+## Implementation Details
 
-2. **order/page.tsx**: Added `tableNumber` state using `useState('')` and passed it along with `setTableNumber` to the OrderSummaryPanel component.
+### Order Number Generation
+- Format: "001", "002", etc. (padded to 3 digits)
+- Resets daily - first order of each day starts at 001
+- Query today's orders by date to find the next number
 
-3. **OrderSummaryPanel.test.tsx**: Added 5 new tests for table number functionality:
-   - Shows input when `onTableNumberChange` is provided
-   - Hides input when `onTableNumberChange` is not provided
-   - Displays the provided table number value
-   - Calls `onTableNumberChange` when input changes
-   - Shows label as optional
+### API Endpoint
+- POST `/api/orders`
+- Request body: `{ items: [{ menuItemId, quantity, notes? }], tableNumber? }`
+- Response: `{ orderId, orderNumber }`
 
-### Testing
-- All 27 OrderSummaryPanel tests pass
-- All 232 tests in the full suite pass
-- No ESLint warnings or errors
-
-### Notes
-- The table number field is optional (shows "(optional)" label)
-- The field only appears when the panel is expanded
-- State is managed in the parent component (controlled component pattern) consistent with existing cart state management
+### Frontend Changes
+- Replace "Place Order (Coming Soon)" with functional button
+- Clear cart on successful submission
+- Show success toast with order number
