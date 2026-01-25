@@ -1,9 +1,32 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+
+// Simple notification sound using Web Audio API
+function playNotificationSound() {
+  try {
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.frequency.value = 880; // A5 note
+    oscillator.type = 'sine';
+
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+  } catch (error) {
+    console.error('Failed to play notification sound:', error);
+  }
+}
 
 interface OrderItem {
   id: number;
@@ -48,6 +71,29 @@ export default function KitchenPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const seenOrderIdsRef = useRef<Set<number>>(new Set());
+  const isInitialLoadRef = useRef(true);
+
+  const checkForNewOrders = useCallback((newOrders: Order[]) => {
+    // Skip notification on initial load
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      // Initialize seen orders with all current order IDs
+      seenOrderIdsRef.current = new Set(newOrders.map(o => o.id));
+      return;
+    }
+
+    // Check for new orders that we haven't seen before
+    const newOrderIds = newOrders
+      .filter(order => !seenOrderIdsRef.current.has(order.id))
+      .map(order => order.id);
+
+    if (newOrderIds.length > 0) {
+      playNotificationSound();
+      // Add new order IDs to seen set
+      newOrderIds.forEach(id => seenOrderIdsRef.current.add(id));
+    }
+  }, []);
 
   useEffect(() => {
     const connectSSE = () => {
@@ -57,6 +103,7 @@ export default function KitchenPage() {
       eventSource.addEventListener('orders', (event) => {
         try {
           const data = JSON.parse(event.data);
+          checkForNewOrders(data.orders);
           setOrders(data.orders);
           setIsConnected(true);
           setError(null);
@@ -96,7 +143,7 @@ export default function KitchenPage() {
         eventSourceRef.current.close();
       }
     };
-  }, []);
+  }, [checkForNewOrders]);
 
   const getOrdersByStatus = (status: OrderStatus): Order[] => {
     return orders.filter((order) => order.status === status);

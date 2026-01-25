@@ -1,6 +1,33 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
 import KitchenPage from '@/app/(admin)/kitchen/page';
 
+// Mock AudioContext for notification sound tests
+const mockOscillator = {
+  connect: jest.fn(),
+  frequency: { value: 0 },
+  type: 'sine' as OscillatorType,
+  start: jest.fn(),
+  stop: jest.fn(),
+};
+
+const mockGainNode = {
+  connect: jest.fn(),
+  gain: {
+    setValueAtTime: jest.fn(),
+    exponentialRampToValueAtTime: jest.fn(),
+  },
+};
+
+const mockAudioContext = {
+  createOscillator: jest.fn(() => mockOscillator),
+  createGain: jest.fn(() => mockGainNode),
+  destination: {},
+  currentTime: 0,
+};
+
+// Store original AudioContext
+const OriginalAudioContext = window.AudioContext;
+
 // Mock orders data
 const mockOrders = [
   {
@@ -103,10 +130,17 @@ describe('KitchenPage', () => {
     MockEventSource.instances = [];
     // @ts-expect-error - Mock EventSource
     global.EventSource = MockEventSource;
+    // @ts-expect-error - Mock AudioContext
+    window.AudioContext = jest.fn(() => mockAudioContext);
+    // Reset mock function call counts
+    mockOscillator.start.mockClear();
+    mockOscillator.stop.mockClear();
+    mockAudioContext.createOscillator.mockClear();
   });
 
   afterEach(() => {
     global.EventSource = OriginalEventSource;
+    window.AudioContext = OriginalAudioContext;
     jest.clearAllTimers();
   });
 
@@ -369,5 +403,125 @@ describe('KitchenPage', () => {
     });
 
     expect(closeSpy).toHaveBeenCalled();
+  });
+
+  describe('Audio Notifications', () => {
+    it('does not play sound on initial order load', async () => {
+      await act(async () => {
+        render(<KitchenPage />);
+      });
+
+      await act(async () => {
+        const eventSource = MockEventSource.instances[0];
+        eventSource.simulateMessage('orders', { orders: mockOrders });
+      });
+
+      // Sound should not play on initial load
+      expect(mockOscillator.start).not.toHaveBeenCalled();
+    });
+
+    it('plays notification sound when new order arrives', async () => {
+      await act(async () => {
+        render(<KitchenPage />);
+      });
+
+      // Initial load with one order
+      await act(async () => {
+        const eventSource = MockEventSource.instances[0];
+        eventSource.simulateMessage('orders', { orders: [mockOrders[0]] });
+      });
+
+      // Should not play on initial load
+      expect(mockOscillator.start).not.toHaveBeenCalled();
+
+      // New order arrives
+      const newOrder = {
+        id: 4,
+        orderNumber: '004',
+        tableNumber: '7',
+        status: 'pending',
+        total: 1500,
+        createdAt: '2026-01-25T10:45:00.000Z',
+        updatedAt: '2026-01-25T10:45:00.000Z',
+        items: [
+          { id: 4, menuItemName: 'Ramen', quantity: 1, notes: null, priceAtTime: 1500 },
+        ],
+      };
+
+      await act(async () => {
+        const eventSource = MockEventSource.instances[0];
+        eventSource.simulateMessage('orders', { orders: [mockOrders[0], newOrder] });
+      });
+
+      // Sound should play for new order
+      expect(mockOscillator.start).toHaveBeenCalled();
+    });
+
+    it('does not play sound for same orders on update', async () => {
+      await act(async () => {
+        render(<KitchenPage />);
+      });
+
+      // Initial load
+      await act(async () => {
+        const eventSource = MockEventSource.instances[0];
+        eventSource.simulateMessage('orders', { orders: mockOrders });
+      });
+
+      mockOscillator.start.mockClear();
+
+      // Same orders received again (e.g., status update)
+      await act(async () => {
+        const eventSource = MockEventSource.instances[0];
+        eventSource.simulateMessage('orders', { orders: mockOrders });
+      });
+
+      // Sound should not play for existing orders
+      expect(mockOscillator.start).not.toHaveBeenCalled();
+    });
+
+    it('plays sound only once per new order', async () => {
+      await act(async () => {
+        render(<KitchenPage />);
+      });
+
+      // Initial load
+      await act(async () => {
+        const eventSource = MockEventSource.instances[0];
+        eventSource.simulateMessage('orders', { orders: [mockOrders[0]] });
+      });
+
+      const newOrder = {
+        id: 5,
+        orderNumber: '005',
+        tableNumber: '8',
+        status: 'pending',
+        total: 2000,
+        createdAt: '2026-01-25T10:50:00.000Z',
+        updatedAt: '2026-01-25T10:50:00.000Z',
+        items: [
+          { id: 5, menuItemName: 'Sushi', quantity: 2, notes: null, priceAtTime: 1000 },
+        ],
+      };
+
+      // First time new order arrives
+      await act(async () => {
+        const eventSource = MockEventSource.instances[0];
+        eventSource.simulateMessage('orders', { orders: [mockOrders[0], newOrder] });
+      });
+
+      expect(mockOscillator.start).toHaveBeenCalledTimes(1);
+
+      mockOscillator.start.mockClear();
+
+      // Same orders received again
+      await act(async () => {
+        const eventSource = MockEventSource.instances[0];
+        eventSource.simulateMessage('orders', { orders: [mockOrders[0], newOrder] });
+      });
+
+      // Sound should not play again for the same order
+      expect(mockOscillator.start).not.toHaveBeenCalled();
+    });
   });
 });
