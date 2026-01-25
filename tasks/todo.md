@@ -1,72 +1,64 @@
-# Task: Calendar Day Cells with Color-Coded Attendance Status
+# Task: Daily Attendance Marking Interface
 
 ## Objective
-Implement calendar day cells that show color-coded attendance status for each staff member.
+Create daily attendance marking interface: tap a day to open dialog showing all staff with status toggles (present/absent/day off)
 
 ## Plan
 
-### 1. Create Attendance API Route (`/api/attendance/route.ts`)
-- **GET**: Fetch attendance records for a month with staff info
-- **POST**: Set attendance status for a staff member on a date
-- **PATCH**: Update attendance status
+### 1. Review Existing Implementation
+- The attendance feature was already fully implemented with:
+  - Calendar with clickable days
+  - Dialog showing all staff with status toggles
+  - Color-coded attendance indicators
 
-### 2. Create Attendance Calendar Page (`/app/(admin)/attendance/page.tsx`)
-- Month view calendar with navigation
-- Each day cell shows colored dots/indicators for each staff member
-- Color coding:
-  - Green = Present
-  - Red = Absent
-  - Gray = Day Off
-- Click on a day to mark/update attendance
+### 2. Add Page Tests
+- Write tests for the attendance page component
+- Cover loading, error states, navigation, and dialog interactions
 
-### 3. Update Middleware
-- Add `/attendance` to protected routes (if not already)
-
-### 4. Write Tests
-- Test for attendance API (GET, POST, PATCH)
-
-### 5. Run Tests and Lint
+### 3. Run Tests and Lint
 - Ensure all tests pass
 - Ensure linting passes
 
-### 6. Commit Changes
+### 4. Commit Changes
 
 ## Todo Items
-- [ ] Create attendance API route (`/api/attendance/route.ts`)
-- [ ] Create attendance calendar page with color-coded day cells
-- [ ] Update middleware to protect `/attendance` route
-- [ ] Write tests for attendance API
-- [ ] Run tests and ensure they pass
-- [ ] Run linting and ensure it passes
-- [ ] Commit changes
+- [x] Review existing attendance implementation
+- [x] Write tests for the attendance page component
+- [x] Run tests and ensure they pass (39 tests passed)
+- [x] Run linting and ensure it passes
+- [x] Commit changes
 
 ## Review
 
 ### Summary of Changes
 
-1. **Created Attendance API Route** (`/src/app/api/attendance/route.ts`)
-   - GET: Fetches active staff and attendance records for a date range
-   - POST: Creates or updates attendance status for a staff member on a date
-   - DELETE: Removes an attendance record
+The attendance feature was already fully implemented. This task added comprehensive page tests.
 
-2. **Created Attendance Calendar Page** (`/src/app/(admin)/attendance/page.tsx`)
-   - Month view calendar with navigation (prev/next month, today button)
-   - Each day cell displays color-coded dots for each staff member:
-     - Green = Present
-     - Red = Absent
-     - Gray = Day Off
-   - Click on a day to open dialog for marking attendance
-   - Staff summary card showing monthly attendance counts per staff member
-   - Legend showing color meanings
+1. **Attendance Page Tests** (`/src/__tests__/app/attendance/page.test.tsx`) - NEW
+   - 15 tests covering:
+     - Loading state display
+     - Calendar rendering with month/year header
+     - Staff summary section display
+     - Legend for status colors
+     - Today button functionality
+     - Day click to open dialog
+     - Dialog with staff status toggles
+     - No staff message handling
+     - Error state handling
+     - Network error handling
+     - Month navigation (prev/next)
+     - Attendance statistics display
+     - API query params verification
 
-3. **Middleware Already Protected** `/attendance` route (was already in place)
+2. **Existing Implementation** (already in place):
+   - `src/app/api/attendance/route.ts` - CRUD API for attendance
+   - `src/app/(admin)/attendance/page.tsx` - Calendar page with day dialog
+   - `src/__tests__/api/attendance/route.test.ts` - 24 API tests
 
-4. **Created API Tests** (`/src/__tests__/api/attendance/route.test.ts`)
-   - 24 tests covering GET, POST, DELETE operations
-   - Tests for validation, error handling, and success cases
+### Test Results
+- All 39 tests passed (15 page tests + 24 API tests)
+- No ESLint warnings or errors
 
-### Files Added/Modified
-- `src/app/api/attendance/route.ts` (new)
-- `src/app/(admin)/attendance/page.tsx` (new)
-- `src/__tests__/api/attendance/route.test.ts` (new)
+### Files Added
+- `src/__tests__/app/attendance/page.test.tsx` (new)
 - `tasks/todo.md` (updated)
