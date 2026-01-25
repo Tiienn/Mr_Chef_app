@@ -7,7 +7,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ChevronUp, ChevronDown, Plus, Minus } from 'lucide-react';
+import { ChevronUp, ChevronDown, Plus, Minus, Trash2 } from 'lucide-react';
 import type { MenuItem } from '@/db/schema';
 
 interface CartItem {
@@ -19,6 +19,7 @@ interface CartItem {
 interface OrderSummaryPanelProps {
   cart: CartItem[];
   onUpdateQuantity: (menuItemId: number, delta: number) => void;
+  onRemoveItem: (menuItemId: number) => void;
   onViewFullCart: () => void;
 }
 
@@ -29,6 +30,7 @@ function formatPrice(priceInCents: number): string {
 export function OrderSummaryPanel({
   cart,
   onUpdateQuantity,
+  onRemoveItem,
   onViewFullCart,
 }: OrderSummaryPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -113,6 +115,18 @@ export function OrderSummaryPanel({
                     aria-label={`Increase ${item.menuItem.name} quantity`}
                   >
                     <Plus className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRemoveItem(item.menuItem.id);
+                    }}
+                    aria-label={`Remove ${item.menuItem.name} from cart`}
+                  >
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               </div>

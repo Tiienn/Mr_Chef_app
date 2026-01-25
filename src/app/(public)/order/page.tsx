@@ -219,6 +219,7 @@ export default function OrderPage() {
         <OrderSummaryPanel
           cart={cart}
           onUpdateQuantity={updateQuantity}
+          onRemoveItem={removeFromCart}
           onViewFullCart={() => setIsCartOpen(true)}
         />
       )}

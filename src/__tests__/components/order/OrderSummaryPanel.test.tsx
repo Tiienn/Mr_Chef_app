@@ -15,6 +15,7 @@ const createMockMenuItem = (overrides: Partial<MenuItem> = {}): MenuItem => ({
 
 describe('OrderSummaryPanel', () => {
   const mockOnUpdateQuantity = jest.fn();
+  const mockOnRemoveItem = jest.fn();
   const mockOnViewFullCart = jest.fn();
 
   beforeEach(() => {
@@ -26,6 +27,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={[]}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -41,6 +43,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -58,6 +61,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -75,6 +79,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -92,6 +97,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -115,6 +121,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -146,6 +153,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -171,6 +179,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -196,6 +205,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -221,6 +231,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -248,6 +259,7 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
@@ -272,11 +284,62 @@ describe('OrderSummaryPanel', () => {
       <OrderSummaryPanel
         cart={cart}
         onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
         onViewFullCart={mockOnViewFullCart}
       />
     );
 
     // Total items: 2 + 3 = 5
     expect(screen.getByText('5 items')).toBeInTheDocument();
+  });
+
+  it('calls onRemoveItem when delete button is clicked', async () => {
+    const cart = [
+      { menuItem: createMockMenuItem({ id: 42, name: 'Test Item' }), quantity: 2 },
+    ];
+
+    render(
+      <OrderSummaryPanel
+        cart={cart}
+        onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
+        onViewFullCart={mockOnViewFullCart}
+      />
+    );
+
+    // Expand to see controls
+    fireEvent.click(screen.getByRole('button', { name: /expand order summary/i }));
+
+    // Click delete button
+    await waitFor(() => {
+      const deleteButton = screen.getByRole('button', { name: /remove test item from cart/i });
+      fireEvent.click(deleteButton);
+    });
+
+    expect(mockOnRemoveItem).toHaveBeenCalledWith(42);
+  });
+
+  it('shows delete button for each item when expanded', async () => {
+    const cart = [
+      { menuItem: createMockMenuItem({ id: 1, name: 'Item One' }), quantity: 1 },
+      { menuItem: createMockMenuItem({ id: 2, name: 'Item Two' }), quantity: 2 },
+    ];
+
+    render(
+      <OrderSummaryPanel
+        cart={cart}
+        onUpdateQuantity={mockOnUpdateQuantity}
+        onRemoveItem={mockOnRemoveItem}
+        onViewFullCart={mockOnViewFullCart}
+      />
+    );
+
+    // Expand to see controls
+    fireEvent.click(screen.getByRole('button', { name: /expand order summary/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /remove item one from cart/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /remove item two from cart/i })).toBeInTheDocument();
+    });
   });
 });
