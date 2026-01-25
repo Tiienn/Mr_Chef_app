@@ -1,69 +1,35 @@
-# Task: Add Top Selling Items Section
-
-## Overview
-Add top selling items section showing ranked list of menu items by quantity sold today.
-
-## Status: Feature Already Implemented
-
-The top selling items section was already implemented in the dashboard:
-- API Route: `src/app/api/dashboard/route.ts` (lines 58-76)
-- UI Component: `src/app/(admin)/dashboard/page.tsx` (lines 247-287)
+# Task: Expense List with Date Range and Category Filters
 
 ## Plan
 
-### 1. Review Existing Implementation
-- [x] Examine dashboard page for top selling items section
-- [x] Examine dashboard API route for top items query
+### Overview
+Display expense list for selected date range with category filters and totals per category. This builds on the existing expenses schema.
 
-### 2. Review Existing Tests
-- [x] Review API route tests (`src/__tests__/api/dashboard/route.test.ts`)
-- [x] Review dashboard page tests (`src/__tests__/app/dashboard/page.test.tsx`)
+### Implementation Steps
 
-### 3. Verify
-- [x] Run tests (`npm test`) - 336 tests pass
-- [x] Run linting (`npm run lint`) - No warnings or errors
+- [ ] 1. Create API route for expenses (`/api/expenses`)
+  - GET: Fetch expenses with date range filtering (startDate, endDate params)
+  - POST: Create new expense
+  - DELETE: Remove expense by ID
 
-### 4. Commit
-- [x] Commit changes with descriptive message
+- [ ] 2. Create expenses page with expense list display
+  - Date range picker for filtering
+  - Category filter dropdown (all, ingredients, rent, wages, utilities, other)
+  - List of expenses showing date, category, description, amount
+  - Totals per category summary
+  - Add expense form
+
+- [ ] 3. Write tests for the expenses API endpoint
+
+- [ ] 4. Write tests for the expenses page component
+
+- [ ] 5. Run tests and verify they pass
+
+- [ ] 6. Run linting and ensure it passes
+
+- [ ] 7. Verify the feature works correctly
+
+- [ ] 8. Commit changes
 
 ## Review
-
-### Implementation Summary
-The top selling items feature was already fully implemented with:
-
-**API Route (`src/app/api/dashboard/route.ts`):**
-- Aggregates order items by menu item ID for today's orders
-- Sums quantities and joins with menu items table for names
-- Returns top 5 items sorted by total quantity descending
-- Supports date filtering via query parameter
-
-**UI Component (`src/app/(admin)/dashboard/page.tsx`):**
-- Displays ranked list of top selling items
-- Gold/silver/bronze styling for positions 1-3
-- Shows item name and quantity sold badge
-- "No orders yet today" empty state message
-
-### Existing Test Coverage
-
-**API Tests (7 tests):**
-- Empty state with no orders
-- Order count and revenue calculation
-- Status counts breakdown
-- Top selling items sorted by quantity
-- Date parameter filtering
-- Limit of 5 items maximum
-- Database error handling (500)
-
-**UI Tests (12 tests):**
-- Loading state display
-- Dashboard data rendering
-- Order status counts
-- Top selling items with names and quantities
-- Empty state message
-- Error handling
-- Date formatting
-- Zero values state
-- Network error handling
-
-### Conclusion
-No code changes were needed - the feature was already complete with comprehensive test coverage.
+(To be filled after implementation)
