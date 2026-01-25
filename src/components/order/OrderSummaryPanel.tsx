@@ -7,7 +7,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
-import { ChevronUp, ChevronDown, Plus, Minus, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { ChevronUp, ChevronDown, Plus, Minus, Trash2, StickyNote } from 'lucide-react';
 import type { MenuItem } from '@/db/schema';
 
 interface CartItem {
@@ -20,6 +29,7 @@ interface OrderSummaryPanelProps {
   cart: CartItem[];
   onUpdateQuantity: (menuItemId: number, delta: number) => void;
   onRemoveItem: (menuItemId: number) => void;
+  onUpdateNotes: (menuItemId: number, notes: string) => void;
   onViewFullCart: () => void;
 }
 
@@ -31,9 +41,12 @@ export function OrderSummaryPanel({
   cart,
   onUpdateQuantity,
   onRemoveItem,
+  onUpdateNotes,
   onViewFullCart,
 }: OrderSummaryPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [notesDialogItem, setNotesDialogItem] = useState<CartItem | null>(null);
+  const [notesInput, setNotesInput] = useState('');
 
   const getCartTotal = () => {
     return cart.reduce(
@@ -44,6 +57,23 @@ export function OrderSummaryPanel({
 
   const getCartItemCount = () => {
     return cart.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const openNotesDialog = (item: CartItem) => {
+    setNotesDialogItem(item);
+    setNotesInput(item.notes || '');
+  };
+
+  const closeNotesDialog = () => {
+    setNotesDialogItem(null);
+    setNotesInput('');
+  };
+
+  const saveNotes = () => {
+    if (notesDialogItem) {
+      onUpdateNotes(notesDialogItem.menuItem.id, notesInput.trim());
+      closeNotesDialog();
+    }
   };
 
   if (cart.length === 0) {
@@ -86,9 +116,26 @@ export function OrderSummaryPanel({
                       {formatPrice(item.menuItem.price * item.quantity)}
                     </p>
                   )}
+                  {item.notes && (
+                    <p className="text-xs text-muted-foreground italic truncate">
+                      {item.notes}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1 ml-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-8 w-8 ${item.notes ? 'text-primary' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openNotesDialog(item);
+                    }}
+                    aria-label={`Add notes for ${item.menuItem.name}`}
+                  >
+                    <StickyNote className="h-3 w-3" />
+                  </Button>
                   <Button
                     variant="outline"
                     size="icon"
@@ -143,6 +190,36 @@ export function OrderSummaryPanel({
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      <Dialog open={notesDialogItem !== null} onOpenChange={(open) => !open && closeNotesDialog()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Special Instructions</DialogTitle>
+            <DialogDescription>
+              Add notes for {notesDialogItem?.menuItem.name} (e.g., &quot;no onion&quot;)
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            value={notesInput}
+            onChange={(e) => setNotesInput(e.target.value)}
+            placeholder="Enter special instructions..."
+            aria-label="Special instructions"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                saveNotes();
+              }
+            }}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={closeNotesDialog}>
+              Cancel
+            </Button>
+            <Button onClick={saveNotes}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

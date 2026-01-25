@@ -77,6 +77,16 @@ export default function OrderPage() {
     setCart((prev) => prev.filter((item) => item.menuItem.id !== menuItemId));
   };
 
+  const updateNotes = (menuItemId: number, notes: string) => {
+    setCart((prev) =>
+      prev.map((item) =>
+        item.menuItem.id === menuItemId
+          ? { ...item, notes: notes || undefined }
+          : item
+      )
+    );
+  };
+
   const getCartTotal = () => {
     return cart.reduce(
       (total, item) => total + item.menuItem.price * item.quantity,
@@ -220,6 +230,7 @@ export default function OrderPage() {
           cart={cart}
           onUpdateQuantity={updateQuantity}
           onRemoveItem={removeFromCart}
+          onUpdateNotes={updateNotes}
           onViewFullCart={() => setIsCartOpen(true)}
         />
       )}
@@ -265,6 +276,11 @@ export default function OrderPage() {
                         {item.menuItem.price > 0 && (
                           <p className="text-sm text-muted-foreground">
                             {formatPrice(item.menuItem.price)} each
+                          </p>
+                        )}
+                        {item.notes && (
+                          <p className="text-xs text-muted-foreground italic">
+                            {item.notes}
                           </p>
                         )}
                       </div>
