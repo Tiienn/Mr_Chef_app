@@ -31,6 +31,8 @@ interface OrderSummaryPanelProps {
   onRemoveItem: (menuItemId: number) => void;
   onUpdateNotes: (menuItemId: number, notes: string) => void;
   onViewFullCart: () => void;
+  tableNumber?: string;
+  onTableNumberChange?: (tableNumber: string) => void;
 }
 
 function formatPrice(priceInCents: number): string {
@@ -43,6 +45,8 @@ export function OrderSummaryPanel({
   onRemoveItem,
   onUpdateNotes,
   onViewFullCart,
+  tableNumber,
+  onTableNumberChange,
 }: OrderSummaryPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [notesDialogItem, setNotesDialogItem] = useState<CartItem | null>(null);
@@ -103,6 +107,20 @@ export function OrderSummaryPanel({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
+          {onTableNumberChange && (
+            <div className="border-t p-3">
+              <label htmlFor="table-number" className="block text-sm font-medium mb-1">
+                Table Number (optional)
+              </label>
+              <Input
+                id="table-number"
+                value={tableNumber || ''}
+                onChange={(e) => onTableNumberChange(e.target.value)}
+                placeholder="Enter table number"
+                aria-label="Table number"
+              />
+            </div>
+          )}
           <div className="max-h-[40vh] overflow-y-auto border-t">
             {cart.map((item) => (
               <div

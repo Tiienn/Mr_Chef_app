@@ -29,6 +29,7 @@ export default function OrderPage() {
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [tableNumber, setTableNumber] = useState('');
 
   useEffect(() => {
     async function loadMenuItems() {
@@ -232,6 +233,8 @@ export default function OrderPage() {
           onRemoveItem={removeFromCart}
           onUpdateNotes={updateNotes}
           onViewFullCart={() => setIsCartOpen(true)}
+          tableNumber={tableNumber}
+          onTableNumberChange={setTableNumber}
         />
       )}
 

@@ -589,4 +589,132 @@ describe('OrderSummaryPanel', () => {
       expect(mockOnUpdateNotes).toHaveBeenCalledWith(42, 'extra sauce');
     });
   });
+
+  describe('Table number functionality', () => {
+    it('shows table number input when onTableNumberChange is provided', async () => {
+      const mockOnTableNumberChange = jest.fn();
+      const cart = [
+        { menuItem: createMockMenuItem(), quantity: 1 },
+      ];
+
+      render(
+        <OrderSummaryPanel
+          cart={cart}
+          onUpdateQuantity={mockOnUpdateQuantity}
+          onRemoveItem={mockOnRemoveItem}
+          onUpdateNotes={mockOnUpdateNotes}
+          onViewFullCart={mockOnViewFullCart}
+          tableNumber=""
+          onTableNumberChange={mockOnTableNumberChange}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /expand order summary/i }));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('Table number')).toBeInTheDocument();
+      });
+    });
+
+    it('does not show table number input when onTableNumberChange is not provided', async () => {
+      const cart = [
+        { menuItem: createMockMenuItem(), quantity: 1 },
+      ];
+
+      render(
+        <OrderSummaryPanel
+          cart={cart}
+          onUpdateQuantity={mockOnUpdateQuantity}
+          onRemoveItem={mockOnRemoveItem}
+          onUpdateNotes={mockOnUpdateNotes}
+          onViewFullCart={mockOnViewFullCart}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /expand order summary/i }));
+
+      await waitFor(() => {
+        expect(screen.queryByLabelText('Table number')).not.toBeInTheDocument();
+      });
+    });
+
+    it('displays the provided table number value', async () => {
+      const mockOnTableNumberChange = jest.fn();
+      const cart = [
+        { menuItem: createMockMenuItem(), quantity: 1 },
+      ];
+
+      render(
+        <OrderSummaryPanel
+          cart={cart}
+          onUpdateQuantity={mockOnUpdateQuantity}
+          onRemoveItem={mockOnRemoveItem}
+          onUpdateNotes={mockOnUpdateNotes}
+          onViewFullCart={mockOnViewFullCart}
+          tableNumber="5"
+          onTableNumberChange={mockOnTableNumberChange}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /expand order summary/i }));
+
+      await waitFor(() => {
+        const input = screen.getByLabelText('Table number') as HTMLInputElement;
+        expect(input.value).toBe('5');
+      });
+    });
+
+    it('calls onTableNumberChange when input value changes', async () => {
+      const mockOnTableNumberChange = jest.fn();
+      const cart = [
+        { menuItem: createMockMenuItem(), quantity: 1 },
+      ];
+
+      render(
+        <OrderSummaryPanel
+          cart={cart}
+          onUpdateQuantity={mockOnUpdateQuantity}
+          onRemoveItem={mockOnRemoveItem}
+          onUpdateNotes={mockOnUpdateNotes}
+          onViewFullCart={mockOnViewFullCart}
+          tableNumber=""
+          onTableNumberChange={mockOnTableNumberChange}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /expand order summary/i }));
+
+      await waitFor(() => {
+        const input = screen.getByLabelText('Table number');
+        fireEvent.change(input, { target: { value: '12' } });
+      });
+
+      expect(mockOnTableNumberChange).toHaveBeenCalledWith('12');
+    });
+
+    it('shows table number label as optional', async () => {
+      const mockOnTableNumberChange = jest.fn();
+      const cart = [
+        { menuItem: createMockMenuItem(), quantity: 1 },
+      ];
+
+      render(
+        <OrderSummaryPanel
+          cart={cart}
+          onUpdateQuantity={mockOnUpdateQuantity}
+          onRemoveItem={mockOnRemoveItem}
+          onUpdateNotes={mockOnUpdateNotes}
+          onViewFullCart={mockOnViewFullCart}
+          tableNumber=""
+          onTableNumberChange={mockOnTableNumberChange}
+        />
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /expand order summary/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText('Table Number (optional)')).toBeInTheDocument();
+      });
+    });
+  });
 });
