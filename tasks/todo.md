@@ -1,52 +1,54 @@
-# Task: Create Auth Middleware
+# Task: Create API Route for Daily Balance
+
+## Overview
+Create API route to save/update daily opening and closing balance at `src/app/api/balance/route.ts`.
 
 ## Plan
 
-Create auth middleware at `src/middleware.ts` that protects all `/dashboard`, `/expenses`, `/attendance` routes - redirects to `/login` if not authenticated.
+### 1. Create API Route
+- [x] Create `src/app/api/balance/route.ts` with:
+  - GET endpoint to fetch daily balance for a date (query param: `?date=YYYY-MM-DD`)
+  - POST endpoint to save/update opening and closing balance
+  - Uses existing `dailyBalance` table from schema
 
-### Requirements Analysis
-- Middleware must check for the `session` cookie
-- Protected routes: `/dashboard`, `/expenses`, `/attendance` (and their sub-routes)
-- If no session cookie, redirect to `/login`
-- Allow access to public routes like `/login`, `/order`, `/api`, `/kitchen`
+### 2. Write Tests
+- [x] Create tests at `src/__tests__/api/balance/route.test.ts`
+- [x] Test GET endpoint returns balance for date
+- [x] Test POST endpoint creates new balance
+- [x] Test POST endpoint updates existing balance (upsert behavior)
+- [x] Test validation errors (400)
+- [x] Test server errors (500)
 
-### Implementation Approach
+### 3. Verify
+- [x] Run tests (`npm test`) - 336 tests pass
+- [x] Run linting (`npm run lint`) - No warnings or errors
 
-1. Create `src/middleware.ts` with Next.js middleware
-2. Use matcher config to target specific routes
-3. Check for session cookie presence
-4. Redirect to /login if not authenticated
-5. Write comprehensive tests
-6. Run tests and linting
-
-## Tasks
-
-- [x] Create middleware at `src/middleware.ts`
-- [x] Write tests for the middleware
-- [x] Run tests and ensure they pass
-- [x] Run linting and ensure it passes
-- [x] Commit changes
+### 4. Commit
+- [x] Commit changes with descriptive message
 
 ## Review
 
-### Summary of Changes
+### Changes Made
+Created new API route at `src/app/api/balance/route.ts` with two endpoints:
 
-**Files created:**
-- `src/middleware.ts` - Auth middleware that protects admin routes
-- `src/__tests__/middleware.test.ts` - Test suite with 16 test cases
+**GET /api/balance?date=YYYY-MM-DD**
+- Fetches daily balance for a specific date
+- Returns `{ date, openingBalance, closingBalance }` if exists
+- Returns `{ date, openingBalance: null, closingBalance: null }` if no record
+- Validation: requires date parameter in YYYY-MM-DD format
 
-### Implementation Details
+**POST /api/balance**
+- Creates or updates daily balance record (upsert behavior)
+- Request body: `{ date, openingBalance?, closingBalance? }`
+- For new records: openingBalance is required
+- For existing records: updates only the fields provided
+- Returns the created/updated balance record
 
-The auth middleware:
-1. Checks if the current path matches any protected route (`/dashboard`, `/expenses`, `/attendance`)
-2. Looks for the `session` cookie on protected routes
-3. If no session cookie (or empty value), redirects to `/login`
-4. If session cookie exists, allows the request to proceed
-5. Uses Next.js `matcher` config to only run on protected routes (better performance)
+### Files Created
+1. `src/app/api/balance/route.ts` - API route with GET and POST handlers
+2. `src/__tests__/api/balance/route.test.ts` - 18 comprehensive tests
 
-### Test Coverage
-- Redirects all protected routes to /login when no session cookie
-- Redirects protected sub-routes (e.g., /dashboard/settings) to /login
-- Allows access to protected routes with valid session cookie
-- Redirects when session cookie is empty string
-- Does not interfere with public routes (/login, /order, /, /api, /kitchen)
+### Testing
+- All 18 new tests pass
+- All 336 total tests pass
+- No linting errors
