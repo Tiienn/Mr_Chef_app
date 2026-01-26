@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { ChefHat } from 'lucide-react';
 
 // Simple notification sound using Web Audio API
 function playNotificationSound() {
@@ -70,6 +72,7 @@ export default function KitchenPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const seenOrderIdsRef = useRef<Set<number>>(new Set());
   const isInitialLoadRef = useRef(true);
@@ -149,14 +152,43 @@ export default function KitchenPage() {
     return orders.filter((order) => order.status === status);
   };
 
-  const activeStatuses: OrderStatus[] = ['pending', 'preparing', 'ready'];
+  const markAsServed = async (orderId: number) => {
+    if (updatingOrderId) return;
+
+    setUpdatingOrderId(orderId);
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, status: 'served' }),
+      });
+
+      if (response.ok) {
+        // Update local state immediately for better UX
+        setOrders((prev) =>
+          prev.map((order) =>
+            order.id === orderId ? { ...order, status: 'served' } : order
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Failed to update order:', err);
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const activeStatuses: OrderStatus[] = ['pending', 'served'];
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-14 items-center justify-between px-4">
-          <h1 className="text-lg font-semibold">Kitchen Display</h1>
+          <Link href="/" className="flex items-center gap-2">
+            <ChefHat className="h-6 w-6 text-orange-600" />
+            <h1 className="text-lg font-semibold">Kitchen Display</h1>
+          </Link>
           <div className="flex items-center gap-2">
             <div
               className={cn(
@@ -181,7 +213,7 @@ export default function KitchenPage() {
 
       {/* Orders Grid */}
       <main className="flex-1 p-4">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2">
           {activeStatuses.map((status) => (
             <div key={status} className="space-y-3">
               {/* Status Column Header */}
@@ -193,6 +225,9 @@ export default function KitchenPage() {
                   )}
                 />
                 <h2 className="font-semibold">{STATUS_CONFIG[status].label}</h2>
+                {status === 'pending' && (
+                  <span className="text-xs text-muted-foreground">(click to serve)</span>
+                )}
                 <Badge variant="secondary" className="ml-auto">
                   {getOrdersByStatus(status).length}
                 </Badge>
@@ -205,10 +240,19 @@ export default function KitchenPage() {
                     key={order.id}
                     className={cn(
                       'transition-all',
-                      status === 'pending' && 'border-yellow-500/50',
-                      status === 'preparing' && 'border-blue-500/50',
-                      status === 'ready' && 'border-green-500/50'
+                      status === 'pending' && 'border-yellow-500/50 cursor-pointer hover:bg-accent/50',
+                      status === 'served' && 'border-gray-500/50 opacity-75',
+                      updatingOrderId === order.id && 'opacity-50'
                     )}
+                    onClick={status === 'pending' ? () => markAsServed(order.id) : undefined}
+                    role={status === 'pending' ? 'button' : undefined}
+                    tabIndex={status === 'pending' ? 0 : undefined}
+                    onKeyDown={status === 'pending' ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        markAsServed(order.id);
+                      }
+                    } : undefined}
                   >
                     <CardHeader className="pb-2 pt-4 px-4">
                       <div className="flex items-center justify-between">

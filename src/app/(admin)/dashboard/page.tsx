@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -31,10 +32,7 @@ interface DashboardData {
 }
 
 function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(cents / 100);
+  return `Rs ${(cents / 100).toFixed(0)}`;
 }
 
 function formatDate(dateString: string): string {
@@ -77,7 +75,10 @@ export default function DashboardPage() {
       <div className="flex min-h-screen flex-col bg-background">
         <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-14 items-center px-4">
-            <h1 className="text-lg font-semibold">Dashboard</h1>
+            <Link href="/" className="flex items-center gap-2">
+              <ChefHat className="h-6 w-6 text-orange-600" />
+              <h1 className="text-lg font-semibold">Dashboard</h1>
+            </Link>
           </div>
         </header>
         <main className="flex-1 p-4">
@@ -103,7 +104,10 @@ export default function DashboardPage() {
       <div className="flex min-h-screen flex-col bg-background">
         <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-14 items-center px-4">
-            <h1 className="text-lg font-semibold">Dashboard</h1>
+            <Link href="/" className="flex items-center gap-2">
+              <ChefHat className="h-6 w-6 text-orange-600" />
+              <h1 className="text-lg font-semibold">Dashboard</h1>
+            </Link>
           </div>
         </header>
         <main className="flex-1 p-4">
@@ -127,7 +131,10 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-14 items-center px-4">
-          <h1 className="text-lg font-semibold">Dashboard</h1>
+          <Link href="/" className="flex items-center gap-2">
+            <ChefHat className="h-6 w-6 text-orange-600" />
+            <h1 className="text-lg font-semibold">Dashboard</h1>
+          </Link>
         </div>
       </header>
 

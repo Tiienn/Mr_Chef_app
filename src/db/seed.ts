@@ -3,27 +3,29 @@ import { getDb, getSqlite, closeDb } from './index';
 import { menuItems, adminUsers } from './schema';
 
 // Menu items data from PRD
+// Prices are stored in cents (Rs 200 = 20000)
 const menuItemsData = [
   // Noodles
-  { name: 'Fried Noodles - Chicken', category: 'Noodles', price: 0, sortOrder: 1 },
-  { name: 'Fried Noodles - Beef', category: 'Noodles', price: 0, sortOrder: 2 },
-  { name: 'Boiled Noodles - Beef', category: 'Noodles', price: 0, sortOrder: 3 },
-  { name: 'Boiled Noodles - Sichuan', category: 'Noodles', price: 0, sortOrder: 4 },
-  { name: 'Boiled Noodles - Black Bean', category: 'Noodles', price: 0, sortOrder: 5 },
+  { name: 'Fried Noodles - Chicken', category: 'Noodles', price: 20000, sortOrder: 1 },
+  { name: 'Fried Noodles - Beef', category: 'Noodles', price: 20000, sortOrder: 2 },
+  { name: 'Boiled Noodles - Beef', category: 'Noodles', price: 15000, sortOrder: 3 },
+  { name: 'Boiled Noodles - Sichuan', category: 'Noodles', price: 15000, sortOrder: 4 },
+  { name: 'Boiled Noodles - Black Bean', category: 'Noodles', price: 15000, sortOrder: 5 },
+  { name: 'Egg (Addon)', category: 'Noodles', price: 2000, sortOrder: 6 },
   // Dumplings
-  { name: 'Gyoza', category: 'Dumplings', price: 0, sortOrder: 6 },
-  { name: 'Niouk Yen', category: 'Dumplings', price: 0, sortOrder: 7 },
-  { name: 'Sao Mai', category: 'Dumplings', price: 0, sortOrder: 8 },
+  { name: 'Gyoza', category: 'Dumplings', price: 2000, sortOrder: 7 },
+  { name: 'Niouk Yen', category: 'Dumplings', price: 2000, sortOrder: 8 },
+  { name: 'Sao Mai', category: 'Dumplings', price: 2000, sortOrder: 9 },
   // Bread
-  { name: 'Bread - Beef', category: 'Bread', price: 0, sortOrder: 9 },
-  { name: 'Bread - Sichuan', category: 'Bread', price: 0, sortOrder: 10 },
-  { name: 'Bread - Tikka', category: 'Bread', price: 0, sortOrder: 11 },
-  { name: 'Bread - Black Bean', category: 'Bread', price: 0, sortOrder: 12 },
+  { name: 'Bread - Beef', category: 'Bread', price: 7500, sortOrder: 10 },
+  { name: 'Bread - Sichuan', category: 'Bread', price: 7500, sortOrder: 11 },
+  { name: 'Bread - Tikka', category: 'Bread', price: 7500, sortOrder: 12 },
+  { name: 'Bread - Black Bean', category: 'Bread', price: 7500, sortOrder: 13 },
   // Halim
-  { name: 'Halim - Veg', category: 'Halim', price: 0, sortOrder: 13 },
-  { name: 'Halim - Lamb', category: 'Halim', price: 0, sortOrder: 14 },
+  { name: 'Halim - Veg', category: 'Halim', price: 7500, sortOrder: 14 },
+  { name: 'Halim - Lamb', category: 'Halim', price: 10000, sortOrder: 15 },
   // Fried Rice
-  { name: 'Fried Rice - Chicken', category: 'Fried Rice', price: 0, sortOrder: 15 },
+  { name: 'Fried Rice - Chicken', category: 'Fried Rice', price: 20000, sortOrder: 16 },
 ];
 
 /**

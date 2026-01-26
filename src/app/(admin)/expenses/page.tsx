@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,7 @@ import {
   Users,
   Zap,
   MoreHorizontal,
+  ChefHat,
 } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
 
@@ -69,10 +71,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 function formatCurrency(cents: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(cents / 100);
+  return `Rs ${(cents / 100).toFixed(0)}`;
 }
 
 function formatDate(dateString: string): string {
@@ -228,7 +227,10 @@ export default function ExpensesPage() {
       <div className="flex min-h-screen flex-col bg-background">
         <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-14 items-center px-4">
-            <h1 className="text-lg font-semibold">Expenses</h1>
+            <Link href="/" className="flex items-center gap-2">
+              <ChefHat className="h-6 w-6 text-orange-600" />
+              <h1 className="text-lg font-semibold">Expenses</h1>
+            </Link>
           </div>
         </header>
         <main className="flex-1 p-4">
@@ -251,7 +253,10 @@ export default function ExpensesPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-14 items-center justify-between px-4">
-          <h1 className="text-lg font-semibold">Expenses</h1>
+          <Link href="/" className="flex items-center gap-2">
+            <ChefHat className="h-6 w-6 text-orange-600" />
+            <h1 className="text-lg font-semibold">Expenses</h1>
+          </Link>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-1">
@@ -301,12 +306,12 @@ export default function ExpensesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Amount ($)</label>
+                  <label className="text-sm font-medium">Amount (Rs)</label>
                   <Input
                     type="number"
-                    step="0.01"
+                    step="1"
                     min="0"
-                    placeholder="0.00"
+                    placeholder="0"
                     value={newExpense.amount}
                     onChange={(e) =>
                       setNewExpense((prev) => ({

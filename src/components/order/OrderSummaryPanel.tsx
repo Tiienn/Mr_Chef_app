@@ -36,7 +36,7 @@ interface OrderSummaryPanelProps {
 }
 
 function formatPrice(priceInCents: number): string {
-  return `$${(priceInCents / 100).toFixed(2)}`;
+  return `Rs ${(priceInCents / 100).toFixed(0)}`;
 }
 
 export function OrderSummaryPanel({

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { orders, orderItems, menuItems } from '@/db/schema';
-import { and, gte, lt } from 'drizzle-orm';
+import { and, gte, lt, eq } from 'drizzle-orm';
 
 interface OrderItemRequest {
   menuItemId: number;
@@ -129,6 +129,70 @@ export async function POST(request: Request) {
     console.error('Failed to create order:', error);
     return NextResponse.json(
       { error: 'Failed to create order' },
+      { status: 500 }
+    );
+  }
+}
+
+interface UpdateOrderRequest {
+  orderId: number;
+  status: 'pending' | 'preparing' | 'ready' | 'served';
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body: UpdateOrderRequest = await request.json();
+
+    if (!body.orderId || !body.status) {
+      return NextResponse.json(
+        { error: 'Order ID and status are required' },
+        { status: 400 }
+      );
+    }
+
+    const validStatuses = ['pending', 'preparing', 'ready', 'served'];
+    if (!validStatuses.includes(body.status)) {
+      return NextResponse.json(
+        { error: 'Invalid status' },
+        { status: 400 }
+      );
+    }
+
+    const db = getDb();
+
+    // Check if order exists
+    const existingOrder = db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, body.orderId))
+      .get();
+
+    if (!existingOrder) {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update order status
+    const updatedOrder = db
+      .update(orders)
+      .set({
+        status: body.status,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, body.orderId))
+      .returning()
+      .get();
+
+    return NextResponse.json({
+      orderId: updatedOrder.id,
+      status: updatedOrder.status,
+    });
+  } catch (error) {
+    console.error('Failed to update order:', error);
+    return NextResponse.json(
+      { error: 'Failed to update order' },
       { status: 500 }
     );
   }

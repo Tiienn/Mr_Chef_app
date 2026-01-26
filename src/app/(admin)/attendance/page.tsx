@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
   ChevronLeft,
@@ -18,6 +20,9 @@ import {
   Check,
   X,
   Coffee,
+  ChefHat,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 
 interface Staff {
@@ -97,6 +102,10 @@ export default function AttendancePage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Add staff state
+  const [newStaffName, setNewStaffName] = useState('');
+  const [isAddingStaff, setIsAddingStaff] = useState(false);
 
   const fetchAttendance = useCallback(async () => {
     try {
@@ -218,8 +227,70 @@ export default function AttendancePage() {
     }
   };
 
+  const handleAddStaff = async (status: 'present' | 'absent' | 'day_off') => {
+    if (!newStaffName.trim() || !selectedDate) return;
+
+    try {
+      setIsAddingStaff(true);
+      // Create new staff member
+      const staffResponse = await fetch('/api/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newStaffName.trim() }),
+      });
+
+      if (!staffResponse.ok) {
+        throw new Error('Failed to add staff member');
+      }
+
+      const newStaff = await staffResponse.json();
+
+      // Set attendance for the new staff member
+      const attendanceResponse = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          staffId: newStaff.id,
+          date: formatDateKey(selectedDate),
+          status,
+        }),
+      });
+
+      if (!attendanceResponse.ok) {
+        throw new Error('Failed to set attendance');
+      }
+
+      setNewStaffName('');
+      fetchAttendance();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add staff');
+    } finally {
+      setIsAddingStaff(false);
+    }
+  };
+
+  const handleDeleteStaff = async (staffId: number) => {
+    try {
+      setIsSubmitting(true);
+      const response = await fetch(`/api/staff?id=${staffId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove staff member');
+      }
+
+      fetchAttendance();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to remove staff');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const openDayDialog = (date: Date) => {
     setSelectedDate(date);
+    setNewStaffName('');
     setIsDialogOpen(true);
   };
 
@@ -232,7 +303,10 @@ export default function AttendancePage() {
       <div className="flex min-h-screen flex-col bg-background">
         <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="flex h-14 items-center px-4">
-            <h1 className="text-lg font-semibold">Attendance</h1>
+            <Link href="/" className="flex items-center gap-2">
+              <ChefHat className="h-6 w-6 text-orange-600" />
+              <h1 className="text-lg font-semibold">Attendance</h1>
+            </Link>
           </div>
         </header>
         <main className="flex-1 p-4">
@@ -251,7 +325,10 @@ export default function AttendancePage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-14 items-center justify-between px-4">
-          <h1 className="text-lg font-semibold">Attendance</h1>
+          <Link href="/" className="flex items-center gap-2">
+            <ChefHat className="h-6 w-6 text-orange-600" />
+            <h1 className="text-lg font-semibold">Attendance</h1>
+          </Link>
           <Button variant="outline" size="sm" onClick={goToToday}>
             Today
           </Button>
@@ -323,33 +400,30 @@ export default function AttendancePage() {
               {monthDays.map((date) => {
                 const isToday = formatDateKey(date) === formatDateKey(today);
                 const attendanceRecords = getAttendanceForDate(date);
-                const hasStaff = data?.staff && data.staff.length > 0;
 
                 return (
                   <button
                     key={formatDateKey(date)}
-                    onClick={() => hasStaff && openDayDialog(date)}
-                    disabled={!hasStaff}
+                    onClick={() => openDayDialog(date)}
                     className={cn(
-                      'aspect-square p-1 rounded-lg border transition-colors flex flex-col items-center justify-start',
+                      'min-h-[80px] p-1 rounded-lg border transition-colors flex flex-col items-start justify-start cursor-pointer',
                       isToday
                         ? 'border-primary bg-primary/5'
-                        : 'border-transparent hover:border-muted-foreground/30 hover:bg-muted/50',
-                      !hasStaff && 'cursor-default opacity-60'
+                        : 'border-transparent hover:border-muted-foreground/30 hover:bg-muted/50'
                     )}
                   >
                     <span
                       className={cn(
-                        'text-sm font-medium',
+                        'text-sm font-medium w-full text-center',
                         isToday && 'text-primary'
                       )}
                     >
                       {date.getDate()}
                     </span>
 
-                    {/* Attendance dots */}
+                    {/* Staff names with status */}
                     {attendanceRecords.length > 0 && (
-                      <div className="flex flex-wrap gap-0.5 justify-center mt-0.5 max-w-full">
+                      <div className="flex flex-col gap-0.5 mt-1 w-full overflow-hidden">
                         {data?.staff.map((staffMember) => {
                           const status = getStaffAttendanceStatus(
                             staffMember.id,
@@ -357,14 +431,18 @@ export default function AttendancePage() {
                           );
                           if (!status) return null;
                           return (
-                            <span
+                            <div
                               key={staffMember.id}
                               className={cn(
-                                'w-2 h-2 rounded-full flex-shrink-0',
-                                STATUS_COLORS[status]
+                                'text-[10px] px-1 py-0.5 rounded truncate',
+                                status === 'present' && 'bg-emerald-500/20 text-emerald-700',
+                                status === 'absent' && 'bg-red-500/20 text-red-700',
+                                status === 'day_off' && 'bg-slate-400/20 text-slate-600'
                               )}
                               title={`${staffMember.name}: ${STATUS_LABELS[status]}`}
-                            />
+                            >
+                              {staffMember.name}
+                            </div>
                           );
                         })}
                       </div>
@@ -435,16 +513,16 @@ export default function AttendancePage() {
           </Card>
         )}
 
-        {/* No Staff Warning */}
+        {/* No Staff Info */}
         {data?.staff && data.staff.length === 0 && (
           <Card>
             <CardContent className="py-8 text-center">
               <Users className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">
-                No active staff members found.
+                No staff members yet.
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Add staff members to start tracking attendance.
+                Click on any date to add staff and mark their attendance.
               </p>
             </CardContent>
           </Card>
@@ -453,7 +531,7 @@ export default function AttendancePage() {
 
       {/* Day Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[90vw] sm:max-w-md">
+        <DialogContent className="max-w-[90vw] sm:max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {selectedDate?.toLocaleDateString('en-US', {
@@ -465,6 +543,46 @@ export default function AttendancePage() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-2">
+            {/* Add New Staff Section */}
+            <div className="p-3 rounded-lg border-2 border-dashed border-primary/30 bg-primary/5">
+              <div className="flex items-center gap-2 mb-2">
+                <Plus className="h-4 w-4 text-primary" />
+                <span className="font-medium text-sm">Add New Staff</span>
+              </div>
+              <Input
+                placeholder="Enter staff name..."
+                value={newStaffName}
+                onChange={(e) => setNewStaffName(e.target.value)}
+                className="mb-2"
+              />
+              <div className="flex gap-2">
+                {(['present', 'absent', 'day_off'] as const).map((status) => {
+                  const Icon = STATUS_ICONS[status];
+                  return (
+                    <Button
+                      key={status}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-1"
+                      disabled={isAddingStaff || !newStaffName.trim()}
+                      onClick={() => handleAddStaff(status)}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">
+                        {STATUS_LABELS[status]}
+                      </span>
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Existing Staff List */}
+            {data?.staff && data.staff.length > 0 && (
+              <div className="border-t pt-3 mt-3">
+                <span className="text-sm text-muted-foreground mb-2 block">Existing Staff</span>
+              </div>
+            )}
             {data?.staff.map((staffMember) => {
               const currentStatus = selectedDate
                 ? getStaffAttendanceStatus(staffMember.id, selectedDate)
@@ -477,22 +595,33 @@ export default function AttendancePage() {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-medium">{staffMember.name}</span>
-                    {currentStatus && (
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          'text-xs',
-                          currentStatus === 'present' &&
-                            'bg-emerald-500/20 text-emerald-700 border-emerald-500/30',
-                          currentStatus === 'absent' &&
-                            'bg-red-500/20 text-red-700 border-red-500/30',
-                          currentStatus === 'day_off' &&
-                            'bg-slate-500/20 text-slate-700 border-slate-500/30'
-                        )}
+                    <div className="flex items-center gap-2">
+                      {currentStatus && (
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            'text-xs',
+                            currentStatus === 'present' &&
+                              'bg-emerald-500/20 text-emerald-700 border-emerald-500/30',
+                            currentStatus === 'absent' &&
+                              'bg-red-500/20 text-red-700 border-red-500/30',
+                            currentStatus === 'day_off' &&
+                              'bg-slate-500/20 text-slate-700 border-slate-500/30'
+                          )}
+                        >
+                          {STATUS_LABELS[currentStatus]}
+                        </Badge>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteStaff(staffMember.id)}
+                        disabled={isSubmitting}
                       >
-                        {STATUS_LABELS[currentStatus]}
-                      </Badge>
-                    )}
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     {(

@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Plus, Minus, Trash2, ShoppingCart, X, Loader2 } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, X, Loader2, ChefHat } from 'lucide-react';
 import { OrderSummaryPanel } from '@/components/order/OrderSummaryPanel';
 import { useToast } from '@/hooks/use-toast';
 import type { MenuItem } from '@/db/schema';
@@ -21,7 +22,7 @@ interface CartItem {
 const CATEGORIES = ['Noodles', 'Dumplings', 'Bread', 'Halim', 'Fried Rice'];
 
 function formatPrice(priceInCents: number): string {
-  return `$${(priceInCents / 100).toFixed(2)}`;
+  return `Rs ${(priceInCents / 100).toFixed(0)}`;
 }
 
 export default function OrderPage() {
@@ -172,7 +173,10 @@ export default function OrderPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-14 items-center justify-between px-4">
-          <h1 className="text-lg font-semibold">Order</h1>
+          <Link href="/" className="flex items-center gap-2">
+            <ChefHat className="h-6 w-6 text-orange-600" />
+            <h1 className="text-lg font-semibold">Order</h1>
+          </Link>
           <Button
             variant="outline"
             size="sm"
@@ -226,19 +230,9 @@ export default function OrderPage() {
                     <Card
                       key={item.id}
                       className={cn(
-                        'relative cursor-pointer transition-all active:scale-[0.98]',
+                        'relative transition-all',
                         quantity > 0 && 'ring-2 ring-primary'
                       )}
-                      onClick={() => addToCart(item)}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Add ${item.name} to cart`}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          addToCart(item);
-                        }
-                      }}
                     >
                       <CardContent className="flex min-h-[120px] flex-col justify-between p-4">
                         <div>
@@ -251,14 +245,30 @@ export default function OrderPage() {
                             </p>
                           )}
                         </div>
-                        {quantity > 0 && (
-                          <Badge
-                            className="absolute right-2 top-2"
-                            variant="default"
+                        <div className="flex items-center justify-center gap-3 mt-3">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => updateQuantity(item.id, -1)}
+                            disabled={quantity === 0}
+                            aria-label={`Decrease ${item.name} quantity`}
                           >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <span className="w-8 text-center font-semibold text-lg">
                             {quantity}
-                          </Badge>
-                        )}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => addToCart(item)}
+                            aria-label={`Increase ${item.name} quantity`}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   );
@@ -274,17 +284,17 @@ export default function OrderPage() {
         </Tabs>
       </main>
 
-      {/* Collapsible Order Summary Panel */}
-      {!isCartOpen && (
-        <OrderSummaryPanel
-          cart={cart}
-          onUpdateQuantity={updateQuantity}
-          onRemoveItem={removeFromCart}
-          onUpdateNotes={updateNotes}
-          onViewFullCart={() => setIsCartOpen(true)}
-          tableNumber={tableNumber}
-          onTableNumberChange={setTableNumber}
-        />
+      {/* Fixed Order Button - shows when cart has items */}
+      {!isCartOpen && cart.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t shadow-lg">
+          <Button
+            className="w-full h-12 text-base font-semibold"
+            onClick={() => setIsCartOpen(true)}
+          >
+            <ShoppingCart className="mr-2 h-5 w-5" />
+            Order ({getCartItemCount()} items) - {formatPrice(getCartTotal())}
+          </Button>
+        </div>
       )}
 
       {/* Cart Panel (Slide-up drawer) */}

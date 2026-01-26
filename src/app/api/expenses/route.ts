@@ -68,8 +68,8 @@ export async function GET(request: Request) {
 
     // Query expenses with optional filters
     const expenseList = conditions.length > 0
-      ? await db.select().from(expenses).where(and(...conditions)).orderBy(desc(expenses.date), desc(expenses.id))
-      : await db.select().from(expenses).orderBy(desc(expenses.date), desc(expenses.id));
+      ? db.select().from(expenses).where(and(...conditions)).orderBy(desc(expenses.date), desc(expenses.id)).all()
+      : db.select().from(expenses).orderBy(desc(expenses.date), desc(expenses.id)).all();
 
     // Calculate totals per category
     const categoryTotals: Record<string, number> = {
