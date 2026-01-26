@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -12,6 +13,9 @@ import {
   ChefHat,
   CheckCircle2,
   TrendingUp,
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
 } from 'lucide-react';
 
 interface DashboardData {
@@ -36,7 +40,7 @@ function formatCurrency(cents: number): string {
 }
 
 function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -44,31 +48,66 @@ function formatDate(dateString: string): string {
   });
 }
 
+function getTodayDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(dateString: string, days: number): string {
+  const date = new Date(dateString + 'T00:00:00');
+  date.setDate(date.getDate() + days);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState(getTodayDateString());
+
+  const today = getTodayDateString();
+  const isToday = selectedDate === today;
+
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/dashboard?date=${selectedDate}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
+      const dashboardData = await response.json();
+      setData(dashboardData);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedDate]);
 
   useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        setIsLoading(true);
-        const response = await fetch('/api/dashboard');
-        if (!response.ok) {
-          throw new Error('Failed to fetch dashboard data');
-        }
-        const dashboardData = await response.json();
-        setData(dashboardData);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
     fetchDashboardData();
-  }, []);
+  }, [fetchDashboardData]);
+
+  const goToPreviousDay = () => {
+    setSelectedDate(addDays(selectedDate, -1));
+  };
+
+  const goToNextDay = () => {
+    if (selectedDate < today) {
+      setSelectedDate(addDays(selectedDate, 1));
+    }
+  };
+
+  const goToToday = () => {
+    setSelectedDate(today);
+  };
 
   if (isLoading) {
     return (
@@ -130,19 +169,43 @@ export default function DashboardPage() {
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-14 items-center px-4">
+        <div className="flex h-14 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
             <ChefHat className="h-6 w-6 text-orange-600" />
             <h1 className="text-lg font-semibold">Dashboard</h1>
           </Link>
+          {!isToday && (
+            <Button variant="outline" size="sm" onClick={goToToday}>
+              Today
+            </Button>
+          )}
         </div>
       </header>
 
       <main className="flex-1 p-4 space-y-4">
-        {/* Date Display */}
-        <p className="text-sm text-muted-foreground">
-          {data?.date ? formatDate(data.date) : 'Today'}
-        </p>
+        {/* Date Picker */}
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={goToPreviousDay}>
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span className={cn("font-medium", isToday && "text-primary")}>
+              {data?.date ? formatDate(data.date) : formatDate(selectedDate)}
+            </span>
+            {isToday && (
+              <Badge variant="secondary" className="text-xs">Today</Badge>
+            )}
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToNextDay}
+            disabled={isToday}
+          >
+            <ChevronRight className="h-5 w-5" />
+          </Button>
+        </div>
 
         {/* Main Stats Grid */}
         <div className="grid gap-4 grid-cols-2">
@@ -287,7 +350,7 @@ export default function DashboardPage() {
               </ul>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No orders yet today
+                {isToday ? 'No orders yet today' : 'No orders on this day'}
               </p>
             )}
           </CardContent>

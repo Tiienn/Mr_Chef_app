@@ -7,27 +7,95 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { ChefHat } from 'lucide-react';
 
-// Simple notification sound using Web Audio API
+// Global audio context (persisted to avoid autoplay issues)
+let audioContext: AudioContext | null = null;
+
+// Initialize audio context on user interaction
+function initAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+  }
+  if (audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+  return audioContext;
+}
+
+// WhatsApp-style notification sound using Web Audio API
 function playNotificationSound() {
   try {
-    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    const ctx = initAudioContext();
+    if (!ctx) return;
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    // First tone
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.frequency.value = 830; // G#5
+    osc1.type = 'sine';
+    gain1.gain.setValueAtTime(0.5, ctx.currentTime);
+    gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+    osc1.start(ctx.currentTime);
+    osc1.stop(ctx.currentTime + 0.15);
 
-    oscillator.frequency.value = 880; // A5 note
-    oscillator.type = 'sine';
-
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.3);
+    // Second tone (higher)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.frequency.value = 1046; // C6
+    osc2.type = 'sine';
+    gain2.gain.setValueAtTime(0.5, ctx.currentTime + 0.15);
+    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+    osc2.start(ctx.currentTime + 0.15);
+    osc2.stop(ctx.currentTime + 0.35);
   } catch (error) {
     console.error('Failed to play notification sound:', error);
   }
+}
+
+// Request browser notification permission
+async function requestNotificationPermission(): Promise<boolean> {
+  if (!('Notification' in window)) {
+    console.log('Browser does not support notifications');
+    return false;
+  }
+
+  if (Notification.permission === 'granted') {
+    return true;
+  }
+
+  if (Notification.permission !== 'denied') {
+    const permission = await Notification.requestPermission();
+    return permission === 'granted';
+  }
+
+  return false;
+}
+
+// Show browser notification for new order
+function showOrderNotification(order: Order) {
+  if (Notification.permission !== 'granted') return;
+
+  const itemsList = order.items
+    .map(item => `${item.quantity}x ${item.menuItemName}`)
+    .join(', ');
+
+  const notification = new Notification(`New Order #${order.orderNumber}`, {
+    body: `${itemsList}${order.tableNumber ? `\nTable: ${order.tableNumber}` : ''}`,
+    icon: '/favicon.ico',
+    tag: `order-${order.id}`,
+    requireInteraction: true,
+  });
+
+  notification.onclick = () => {
+    window.focus();
+    notification.close();
+  };
+
+  // Auto-close after 10 seconds
+  setTimeout(() => notification.close(), 10000);
 }
 
 interface OrderItem {
@@ -77,6 +145,27 @@ export default function KitchenPage() {
   const seenOrderIdsRef = useRef<Set<number>>(new Set());
   const isInitialLoadRef = useRef(true);
 
+  // Request notification permission and init audio on mount
+  useEffect(() => {
+    requestNotificationPermission();
+
+    // Initialize audio context on first user interaction
+    const handleInteraction = () => {
+      initAudioContext();
+      // Remove listeners after first interaction
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+
+    document.addEventListener('click', handleInteraction);
+    document.addEventListener('keydown', handleInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('keydown', handleInteraction);
+    };
+  }, []);
+
   const checkForNewOrders = useCallback((newOrders: Order[]) => {
     // Skip notification on initial load
     if (isInitialLoadRef.current) {
@@ -87,14 +176,19 @@ export default function KitchenPage() {
     }
 
     // Check for new orders that we haven't seen before
-    const newOrderIds = newOrders
-      .filter(order => !seenOrderIdsRef.current.has(order.id))
-      .map(order => order.id);
+    const brandNewOrders = newOrders.filter(order => !seenOrderIdsRef.current.has(order.id));
 
-    if (newOrderIds.length > 0) {
+    if (brandNewOrders.length > 0) {
+      // Play sound
       playNotificationSound();
+
+      // Show browser notification for each new order
+      brandNewOrders.forEach(order => {
+        showOrderNotification(order);
+      });
+
       // Add new order IDs to seen set
-      newOrderIds.forEach(id => seenOrderIdsRef.current.add(id));
+      brandNewOrders.forEach(order => seenOrderIdsRef.current.add(order.id));
     }
   }, []);
 
