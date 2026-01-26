@@ -45,12 +45,6 @@ interface AttendanceData {
   attendance: AttendanceRecord[];
 }
 
-const STATUS_COLORS = {
-  present: 'bg-emerald-500',
-  absent: 'bg-red-500',
-  day_off: 'bg-slate-400',
-};
-
 const STATUS_LABELS = {
   present: 'Present',
   absent: 'Absent',

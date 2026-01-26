@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Plus, Minus, Trash2, ShoppingCart, X, Loader2, ChefHat } from 'lucide-react';
-import { OrderSummaryPanel } from '@/components/order/OrderSummaryPanel';
 import { useToast } from '@/hooks/use-toast';
 import type { MenuItem } from '@/db/schema';
 
@@ -80,16 +79,6 @@ export default function OrderPage() {
 
   const removeFromCart = (menuItemId: number) => {
     setCart((prev) => prev.filter((item) => item.menuItem.id !== menuItemId));
-  };
-
-  const updateNotes = (menuItemId: number, notes: string) => {
-    setCart((prev) =>
-      prev.map((item) =>
-        item.menuItem.id === menuItemId
-          ? { ...item, notes: notes || undefined }
-          : item
-      )
-    );
   };
 
   const getCartTotal = () => {
