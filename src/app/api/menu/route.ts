@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { menuItems } from '@/db/schema';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const db = getDb();
