@@ -11,11 +11,10 @@ export async function GET() {
   try {
     const db = getDb();
 
-    const staffList = db
+    const staffList = await db
       .select()
       .from(staff)
-      .where(eq(staff.active, true))
-      .all();
+      .where(eq(staff.active, true));
 
     return NextResponse.json(staffList);
   } catch (error) {
@@ -40,14 +39,13 @@ export async function POST(request: Request) {
 
     const db = getDb();
 
-    const result = db
+    const [result] = await db
       .insert(staff)
       .values({
         name: body.name.trim(),
         active: true,
       })
-      .returning()
-      .get();
+      .returning();
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
@@ -82,11 +80,10 @@ export async function DELETE(request: Request) {
     const db = getDb();
 
     // Soft delete by setting active to false
-    const existing = db
+    const [existing] = await db
       .select()
       .from(staff)
-      .where(eq(staff.id, staffId))
-      .get();
+      .where(eq(staff.id, staffId));
 
     if (!existing) {
       return NextResponse.json(
@@ -95,10 +92,9 @@ export async function DELETE(request: Request) {
       );
     }
 
-    db.update(staff)
+    await db.update(staff)
       .set({ active: false })
-      .where(eq(staff.id, staffId))
-      .run();
+      .where(eq(staff.id, staffId));
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -32,11 +32,10 @@ export async function POST(request: Request) {
     const db = getDb();
 
     // Find user by username
-    const user = db
+    const [user] = await db
       .select()
       .from(adminUsers)
-      .where(eq(adminUsers.username, body.username))
-      .get();
+      .where(eq(adminUsers.username, body.username));
 
     if (!user) {
       return NextResponse.json(

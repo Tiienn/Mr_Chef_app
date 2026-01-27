@@ -68,8 +68,8 @@ export async function GET(request: Request) {
 
     // Query expenses with optional filters
     const expenseList = conditions.length > 0
-      ? db.select().from(expenses).where(and(...conditions)).orderBy(desc(expenses.date), desc(expenses.id)).all()
-      : db.select().from(expenses).orderBy(desc(expenses.date), desc(expenses.id)).all();
+      ? await db.select().from(expenses).where(and(...conditions)).orderBy(desc(expenses.date), desc(expenses.id))
+      : await db.select().from(expenses).orderBy(desc(expenses.date), desc(expenses.id));
 
     // Calculate totals per category
     const categoryTotals: Record<string, number> = {
@@ -143,7 +143,7 @@ export async function POST(request: Request) {
 
     const db = getDb();
 
-    const result = db
+    const [result] = await db
       .insert(expenses)
       .values({
         category: body.category,
@@ -151,8 +151,7 @@ export async function POST(request: Request) {
         amount: body.amount,
         date: date,
       })
-      .returning()
-      .get();
+      .returning();
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
@@ -187,11 +186,10 @@ export async function DELETE(request: Request) {
     const db = getDb();
 
     // Check if expense exists
-    const existing = db
+    const [existing] = await db
       .select()
       .from(expenses)
-      .where(eq(expenses.id, expenseId))
-      .get();
+      .where(eq(expenses.id, expenseId));
 
     if (!existing) {
       return NextResponse.json(
@@ -200,7 +198,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    db.delete(expenses).where(eq(expenses.id, expenseId)).run();
+    await db.delete(expenses).where(eq(expenses.id, expenseId));
 
     return NextResponse.json({ success: true });
   } catch (error) {

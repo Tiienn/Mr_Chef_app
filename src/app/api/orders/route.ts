@@ -46,11 +46,8 @@ export async function POST(request: Request) {
 
     // Validate menu items exist and get their current prices
     const menuItemIds = body.items.map((item) => item.menuItemId);
-    const menuItemsData = db
-      .select()
-      .from(menuItems)
-      .all()
-      .filter((item) => menuItemIds.includes(item.id));
+    const allMenuItems = await db.select().from(menuItems);
+    const menuItemsData = allMenuItems.filter((item) => menuItemIds.includes(item.id));
 
     if (menuItemsData.length !== menuItemIds.length) {
       return NextResponse.json(
@@ -82,7 +79,7 @@ export async function POST(request: Request) {
     const startOfDay = getStartOfDay(now);
     const endOfDay = getEndOfDay(now);
 
-    const todaysOrders = db
+    const todaysOrders = await db
       .select()
       .from(orders)
       .where(
@@ -90,13 +87,12 @@ export async function POST(request: Request) {
           gte(orders.createdAt, startOfDay),
           lt(orders.createdAt, endOfDay)
         )
-      )
-      .all();
+      );
 
     const orderNumber = generateOrderNumber(todaysOrders.length);
 
     // Create the order
-    const order = db
+    const [order] = await db
       .insert(orders)
       .values({
         orderNumber,
@@ -104,21 +100,19 @@ export async function POST(request: Request) {
         total,
         status: 'pending',
       })
-      .returning()
-      .get();
+      .returning();
 
     // Create order items
     for (const item of body.items) {
       const price = menuItemPriceMap.get(item.menuItemId)!;
-      db.insert(orderItems)
+      await db.insert(orderItems)
         .values({
           orderId: order.id,
           menuItemId: item.menuItemId,
           quantity: item.quantity,
           notes: item.notes || null,
           priceAtTime: price,
-        })
-        .run();
+        });
     }
 
     return NextResponse.json({
@@ -161,11 +155,10 @@ export async function PATCH(request: Request) {
     const db = getDb();
 
     // Check if order exists
-    const existingOrder = db
+    const [existingOrder] = await db
       .select()
       .from(orders)
-      .where(eq(orders.id, body.orderId))
-      .get();
+      .where(eq(orders.id, body.orderId));
 
     if (!existingOrder) {
       return NextResponse.json(
@@ -175,15 +168,14 @@ export async function PATCH(request: Request) {
     }
 
     // Update order status
-    const updatedOrder = db
+    const [updatedOrder] = await db
       .update(orders)
       .set({
         status: body.status,
         updatedAt: new Date(),
       })
       .where(eq(orders.id, body.orderId))
-      .returning()
-      .get();
+      .returning();
 
     return NextResponse.json({
       orderId: updatedOrder.id,

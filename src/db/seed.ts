@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
-import { getDb, getSqlite, closeDb } from './index';
-import { menuItems, adminUsers } from './schema';
+import { getDb, closeDb } from './index';
+import { menuItems, adminUsers, orderItems, orders } from './schema';
 
 // Menu items data from PRD
 // Prices are stored in cents (Rs 200 = 20000)
@@ -38,35 +38,29 @@ export function hashPassword(password: string): string {
 
 /**
  * Seed menu items into the database.
- * Clears existing menu items and inserts fresh data.
  */
 export async function seedMenuItems(db: ReturnType<typeof getDb>): Promise<void> {
-  // Clear existing menu items
-  db.delete(menuItems).run();
-
-  // Insert menu items
-  db.insert(menuItems).values(menuItemsData).run();
+  // Delete order_items first (FK to menu_items and orders)
+  await db.delete(orderItems);
+  await db.delete(orders);
+  await db.delete(menuItems);
+  await db.insert(menuItems).values(menuItemsData);
 }
 
 /**
  * Seed the default admin user into the database.
- * Clears existing admin users and creates the default admin.
  */
 export async function seedAdminUser(db: ReturnType<typeof getDb>): Promise<void> {
-  // Clear existing admin users
-  db.delete(adminUsers).run();
-
-  // Create default admin user
+  await db.delete(adminUsers);
   const passwordHash = hashPassword('admin123');
-  db.insert(adminUsers).values({
+  await db.insert(adminUsers).values({
     username: 'admin',
     passwordHash,
-  }).run();
+  });
 }
 
 /**
  * Run the complete seed operation.
- * This will clear and repopulate menu_items and admin_users tables.
  */
 export async function seed(db?: ReturnType<typeof getDb>): Promise<void> {
   const database = db || getDb();
@@ -84,78 +78,6 @@ export async function seed(db?: ReturnType<typeof getDb>): Promise<void> {
 
 // Run seed if this file is executed directly
 if (require.main === module) {
-  // Initialize database schema first
-  const sqlite = getSqlite();
-  sqlite.exec(`
-    CREATE TABLE IF NOT EXISTS menu_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      category TEXT NOT NULL,
-      price INTEGER NOT NULL,
-      available INTEGER NOT NULL DEFAULT 1,
-      sort_order INTEGER NOT NULL DEFAULT 0,
-      created_at INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS orders (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_number TEXT NOT NULL,
-      table_number TEXT,
-      status TEXT NOT NULL DEFAULT 'pending',
-      total INTEGER NOT NULL,
-      created_at INTEGER,
-      updated_at INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS order_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      order_id INTEGER NOT NULL REFERENCES orders(id),
-      menu_item_id INTEGER NOT NULL REFERENCES menu_items(id),
-      quantity INTEGER NOT NULL,
-      notes TEXT,
-      price_at_time INTEGER NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS expenses (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      category TEXT NOT NULL,
-      description TEXT NOT NULL,
-      amount INTEGER NOT NULL,
-      date TEXT NOT NULL,
-      created_at INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS staff (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      active INTEGER NOT NULL DEFAULT 1,
-      created_at INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS attendance (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      staff_id INTEGER NOT NULL REFERENCES staff(id),
-      date TEXT NOT NULL,
-      status TEXT NOT NULL,
-      created_at INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS admin_users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT NOT NULL UNIQUE,
-      password_hash TEXT NOT NULL,
-      created_at INTEGER
-    );
-
-    CREATE TABLE IF NOT EXISTS daily_balance (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL UNIQUE,
-      opening_balance INTEGER NOT NULL,
-      closing_balance INTEGER,
-      created_at INTEGER
-    );
-  `);
-
   seed()
     .then(() => {
       closeDb();

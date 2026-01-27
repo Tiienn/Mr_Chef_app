@@ -37,11 +37,10 @@ export async function GET(request: Request) {
 
     const db = getDb();
 
-    const balance = db
+    const [balance] = await db
       .select()
       .from(dailyBalance)
-      .where(eq(dailyBalance.date, date))
-      .get();
+      .where(eq(dailyBalance.date, date));
 
     if (!balance) {
       return NextResponse.json({
@@ -108,11 +107,10 @@ export async function POST(request: Request) {
     const db = getDb();
 
     // Check if record exists for this date
-    const existing = db
+    const [existing] = await db
       .select()
       .from(dailyBalance)
-      .where(eq(dailyBalance.date, body.date))
-      .get();
+      .where(eq(dailyBalance.date, body.date));
 
     if (existing) {
       // Update existing record
@@ -124,16 +122,14 @@ export async function POST(request: Request) {
         updateData.closingBalance = body.closingBalance;
       }
 
-      db.update(dailyBalance)
+      await db.update(dailyBalance)
         .set(updateData)
-        .where(eq(dailyBalance.date, body.date))
-        .run();
+        .where(eq(dailyBalance.date, body.date));
 
-      const updated = db
+      const [updated] = await db
         .select()
         .from(dailyBalance)
-        .where(eq(dailyBalance.date, body.date))
-        .get();
+        .where(eq(dailyBalance.date, body.date));
 
       return NextResponse.json({
         id: updated!.id,
@@ -150,15 +146,14 @@ export async function POST(request: Request) {
         );
       }
 
-      const result = db
+      const [result] = await db
         .insert(dailyBalance)
         .values({
           date: body.date,
           openingBalance: body.openingBalance,
           closingBalance: body.closingBalance ?? null,
         })
-        .returning()
-        .get();
+        .returning();
 
       return NextResponse.json({
         id: result.id,

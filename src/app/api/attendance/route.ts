@@ -41,14 +41,13 @@ export async function GET(request: Request) {
     const db = getDb();
 
     // Fetch all active staff
-    const staffList = db
+    const staffList = await db
       .select()
       .from(staff)
-      .where(eq(staff.active, true))
-      .all();
+      .where(eq(staff.active, true));
 
     // Fetch attendance records for the date range
-    const attendanceRecords = db
+    const attendanceRecords = await db
       .select()
       .from(attendance)
       .where(
@@ -56,8 +55,7 @@ export async function GET(request: Request) {
           gte(attendance.date, startDate),
           lte(attendance.date, endDate)
         )
-      )
-      .all();
+      );
 
     return NextResponse.json({
       staff: staffList,
@@ -101,11 +99,10 @@ export async function POST(request: Request) {
     const db = getDb();
 
     // Check if staff exists and is active
-    const staffMember = db
+    const [staffMember] = await db
       .select()
       .from(staff)
-      .where(eq(staff.id, body.staffId))
-      .get();
+      .where(eq(staff.id, body.staffId));
 
     if (!staffMember) {
       return NextResponse.json(
@@ -115,7 +112,7 @@ export async function POST(request: Request) {
     }
 
     // Check if attendance record already exists for this staff/date
-    const existing = db
+    const [existing] = await db
       .select()
       .from(attendance)
       .where(
@@ -123,31 +120,28 @@ export async function POST(request: Request) {
           eq(attendance.staffId, body.staffId),
           eq(attendance.date, body.date)
         )
-      )
-      .get();
+      );
 
     if (existing) {
       // Update existing record
-      const result = db
+      const [result] = await db
         .update(attendance)
         .set({ status: body.status })
         .where(eq(attendance.id, existing.id))
-        .returning()
-        .get();
+        .returning();
 
       return NextResponse.json(result);
     }
 
     // Create new record
-    const result = db
+    const [result] = await db
       .insert(attendance)
       .values({
         staffId: body.staffId,
         date: body.date,
         status: body.status,
       })
-      .returning()
-      .get();
+      .returning();
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
@@ -190,7 +184,7 @@ export async function DELETE(request: Request) {
     const db = getDb();
 
     // Check if record exists
-    const existing = db
+    const [existing] = await db
       .select()
       .from(attendance)
       .where(
@@ -198,8 +192,7 @@ export async function DELETE(request: Request) {
           eq(attendance.staffId, staffIdNum),
           eq(attendance.date, date)
         )
-      )
-      .get();
+      );
 
     if (!existing) {
       return NextResponse.json(
@@ -208,9 +201,8 @@ export async function DELETE(request: Request) {
       );
     }
 
-    db.delete(attendance)
-      .where(eq(attendance.id, existing.id))
-      .run();
+    await db.delete(attendance)
+      .where(eq(attendance.id, existing.id));
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -31,13 +31,13 @@ interface OrderWithItems {
   }>;
 }
 
-function fetchTodaysOrders(db: ReturnType<typeof getDb>): OrderWithItems[] {
+async function fetchTodaysOrders(db: ReturnType<typeof getDb>): Promise<OrderWithItems[]> {
   const now = new Date();
   const startOfDay = getStartOfDay(now);
   const endOfDay = getEndOfDay(now);
 
   // Get today's orders
-  const todaysOrders = db
+  const todaysOrders = await db
     .select()
     .from(orders)
     .where(
@@ -45,12 +45,12 @@ function fetchTodaysOrders(db: ReturnType<typeof getDb>): OrderWithItems[] {
         gte(orders.createdAt, startOfDay),
         lt(orders.createdAt, endOfDay)
       )
-    )
-    .all();
+    );
 
   // Get order items with menu item names for each order
-  const ordersWithItems: OrderWithItems[] = todaysOrders.map((order) => {
-    const items = db
+  const ordersWithItems: OrderWithItems[] = [];
+  for (const order of todaysOrders) {
+    const items = await db
       .select({
         id: orderItems.id,
         menuItemName: menuItems.name,
@@ -60,14 +60,13 @@ function fetchTodaysOrders(db: ReturnType<typeof getDb>): OrderWithItems[] {
       })
       .from(orderItems)
       .innerJoin(menuItems, eq(orderItems.menuItemId, menuItems.id))
-      .where(eq(orderItems.orderId, order.id))
-      .all();
+      .where(eq(orderItems.orderId, order.id));
 
-    return {
+    ordersWithItems.push({
       ...order,
       items,
-    };
-  });
+    });
+  }
 
   return ordersWithItems;
 }
@@ -92,12 +91,12 @@ export async function GET() {
         }
       };
 
-      const checkForUpdates = () => {
+      const checkForUpdates = async () => {
         if (isControllerClosed) return;
 
         try {
           const db = getDb();
-          const ordersData = fetchTodaysOrders(db);
+          const ordersData = await fetchTodaysOrders(db);
           const currentDataHash = JSON.stringify(ordersData);
 
           // Send data if it has changed
