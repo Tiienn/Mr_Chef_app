@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getDb } from '@/db';
 import { orders, orderItems, menuItems } from '@/db/schema';
 import { and, gte, lt, eq } from 'drizzle-orm';
+import { sendPushNotificationToAll } from '@/lib/push-notifications';
 
 interface OrderItemRequest {
   menuItemId: number;
@@ -103,8 +104,13 @@ export async function POST(request: Request) {
       .returning();
 
     // Create order items
+    const orderItemNames: string[] = [];
     for (const item of body.items) {
       const price = menuItemPriceMap.get(item.menuItemId)!;
+      const menuItem = menuItemsData.find((m) => m.id === item.menuItemId);
+      if (menuItem) {
+        orderItemNames.push(`${item.quantity}x ${menuItem.name}`);
+      }
       await db.insert(orderItems)
         .values({
           orderId: order.id,
@@ -114,6 +120,13 @@ export async function POST(request: Request) {
           priceAtTime: price,
         });
     }
+
+    // Send push notification to kitchen devices
+    sendPushNotificationToAll({
+      title: `New Order #${order.orderNumber}`,
+      body: orderItemNames.join(', ') + (body.tableNumber ? ` (Table ${body.tableNumber})` : ''),
+      url: '/kitchen',
+    }).catch((err) => console.error('Push notification error:', err));
 
     return NextResponse.json({
       orderId: order.id,

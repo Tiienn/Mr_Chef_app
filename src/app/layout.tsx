@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Toaster } from "@/components/ui/toaster";
 import "./globals.css";
@@ -17,6 +17,16 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Mr Chef",
   description: "Restaurant management system for Mr Chef",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Mr Chef",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ea580c",
 };
 
 export default function RootLayout({

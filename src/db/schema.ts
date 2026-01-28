@@ -77,6 +77,15 @@ export const dailyBalance = sqliteTable('daily_balance', {
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
+// Push subscriptions table (for web push notifications)
+export const pushSubscriptions = sqliteTable('push_subscriptions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  endpoint: text('endpoint').notNull().unique(),
+  p256dh: text('p256dh').notNull(),
+  auth: text('auth').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
 // Relations
 export const ordersRelations = relations(orders, ({ many }) => ({
   items: many(orderItems),
@@ -132,3 +141,6 @@ export type NewAdminUser = typeof adminUsers.$inferInsert;
 
 export type DailyBalance = typeof dailyBalance.$inferSelect;
 export type NewDailyBalance = typeof dailyBalance.$inferInsert;
+
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
