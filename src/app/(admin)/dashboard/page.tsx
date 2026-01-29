@@ -93,7 +93,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [fetchDashboardData]);
+
+    // Auto-refresh every 10 seconds when viewing today
+    if (isToday) {
+      const interval = setInterval(fetchDashboardData, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [fetchDashboardData, isToday]);
 
   const goToPreviousDay = () => {
     setSelectedDate(addDays(selectedDate, -1));
