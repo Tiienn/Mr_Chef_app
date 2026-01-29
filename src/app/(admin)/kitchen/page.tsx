@@ -306,7 +306,7 @@ export default function KitchenPage() {
     return orders.filter((order) => order.status === status);
   };
 
-  const markAsServed = async (orderId: number) => {
+  const updateOrderStatus = async (orderId: number, newStatus: OrderStatus) => {
     if (updatingOrderId) return;
 
     setUpdatingOrderId(orderId);
@@ -314,14 +314,13 @@ export default function KitchenPage() {
       const response = await fetch('/api/orders', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, status: 'served' }),
+        body: JSON.stringify({ orderId, status: newStatus }),
       });
 
       if (response.ok) {
-        // Update local state immediately for better UX
         setOrders((prev) =>
           prev.map((order) =>
-            order.id === orderId ? { ...order, status: 'served' } : order
+            order.id === orderId ? { ...order, status: newStatus } : order
           )
         );
       }
@@ -382,6 +381,9 @@ export default function KitchenPage() {
                 {status === 'pending' && (
                   <span className="text-xs text-muted-foreground">(click to serve)</span>
                 )}
+                {status === 'served' && (
+                  <span className="text-xs text-muted-foreground">(click to undo)</span>
+                )}
                 <Badge variant="secondary" className="ml-auto">
                   {getOrdersByStatus(status).length}
                 </Badge>
@@ -393,20 +395,20 @@ export default function KitchenPage() {
                   <Card
                     key={order.id}
                     className={cn(
-                      'transition-all',
-                      status === 'pending' && 'border-yellow-500/50 cursor-pointer hover:bg-accent/50',
-                      status === 'served' && 'border-gray-500/50 opacity-75',
+                      'transition-all cursor-pointer',
+                      status === 'pending' && 'border-yellow-500/50 hover:bg-accent/50',
+                      status === 'served' && 'border-gray-500/50 opacity-75 hover:opacity-100',
                       updatingOrderId === order.id && 'opacity-50'
                     )}
-                    onClick={status === 'pending' ? () => markAsServed(order.id) : undefined}
-                    role={status === 'pending' ? 'button' : undefined}
-                    tabIndex={status === 'pending' ? 0 : undefined}
-                    onKeyDown={status === 'pending' ? (e) => {
+                    onClick={() => updateOrderStatus(order.id, status === 'pending' ? 'served' : 'pending')}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        markAsServed(order.id);
+                        updateOrderStatus(order.id, status === 'pending' ? 'served' : 'pending');
                       }
-                    } : undefined}
+                    }}
                   >
                     <CardHeader className="pb-2 pt-4 px-4">
                       <div className="flex items-center justify-between">
