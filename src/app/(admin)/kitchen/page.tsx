@@ -163,6 +163,7 @@ interface Order {
   id: number;
   orderNumber: string;
   tableNumber: string | null;
+  takeaway: boolean;
   status: string;
   total: number;
   createdAt: string | null;
@@ -416,11 +417,18 @@ export default function KitchenPage() {
                           {formatTime(order.createdAt)}
                         </span>
                       </div>
-                      {order.tableNumber && (
-                        <Badge variant="outline" className="w-fit">
-                          Table {order.tableNumber}
-                        </Badge>
-                      )}
+                      <div className="flex gap-2">
+                        {order.takeaway && (
+                          <Badge className="w-fit bg-orange-500 hover:bg-orange-500">
+                            Takeaway
+                          </Badge>
+                        )}
+                        {order.tableNumber && (
+                          <Badge variant="outline" className="w-fit">
+                            Table {order.tableNumber}
+                          </Badge>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent className="pb-4 px-4">
                       <ul className="space-y-1">

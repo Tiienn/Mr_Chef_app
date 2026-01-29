@@ -13,6 +13,7 @@ interface OrderItemRequest {
 interface CreateOrderRequest {
   items: OrderItemRequest[];
   tableNumber?: string;
+  takeaway?: boolean;
 }
 
 function getStartOfDay(date: Date): Date {
@@ -98,6 +99,7 @@ export async function POST(request: Request) {
       .values({
         orderNumber,
         tableNumber: body.tableNumber || null,
+        takeaway: body.takeaway || false,
         total,
         status: 'pending',
       })
@@ -122,9 +124,13 @@ export async function POST(request: Request) {
     }
 
     // Send push notification to kitchen devices
+    const extras = [
+      body.takeaway ? 'TAKEAWAY' : '',
+      body.tableNumber ? `Table ${body.tableNumber}` : '',
+    ].filter(Boolean).join(' | ');
     sendPushNotificationToAll({
-      title: `New Order #${order.orderNumber}`,
-      body: orderItemNames.join(', ') + (body.tableNumber ? ` (Table ${body.tableNumber})` : ''),
+      title: `New Order #${order.orderNumber}${body.takeaway ? ' (TAKEAWAY)' : ''}`,
+      body: orderItemNames.join(', ') + (extras ? ` (${extras})` : ''),
       url: '/kitchen',
     }).catch((err) => console.error('Push notification error:', err));
 

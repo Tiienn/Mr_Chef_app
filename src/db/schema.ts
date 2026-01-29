@@ -17,6 +17,7 @@ export const orders = sqliteTable('orders', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   orderNumber: text('order_number').notNull(),
   tableNumber: text('table_number'),
+  takeaway: integer('takeaway', { mode: 'boolean' }).notNull().default(false),
   status: text('status', { enum: ['pending', 'preparing', 'ready', 'served'] }).notNull().default('pending'),
   total: integer('total').notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),

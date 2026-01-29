@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Plus, Minus, Trash2, ShoppingCart, X, Loader2, ChefHat } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, X, Loader2, ChefHat, PackageOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { MenuItem } from '@/db/schema';
 
@@ -20,6 +20,9 @@ interface CartItem {
 // Categories in display order
 const CATEGORIES = ['Noodles', 'Demi', 'Dumplings', 'Bread', 'Halim', 'Fried Rice'];
 
+// Categories that support takeaway
+const TAKEAWAY_CATEGORIES = ['Noodles', 'Demi', 'Dumplings', 'Halim', 'Fried Rice'];
+
 function formatPrice(priceInCents: number): string {
   return `Rs ${(priceInCents / 100).toFixed(0)}`;
 }
@@ -31,6 +34,7 @@ export default function OrderPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [tableNumber, setTableNumber] = useState('');
+  const [isTakeaway, setIsTakeaway] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -118,6 +122,7 @@ export default function OrderPage() {
             notes: item.notes,
           })),
           tableNumber: tableNumber || undefined,
+          takeaway: isTakeaway,
         }),
       });
 
@@ -125,6 +130,7 @@ export default function OrderPage() {
         const data = await response.json();
         setCart([]);
         setTableNumber('');
+        setIsTakeaway(false);
         setIsCartOpen(false);
         toast({
           title: 'Order Placed',
@@ -377,6 +383,21 @@ export default function OrderPage() {
                     <span>Total</span>
                     <span>{formatPrice(getCartTotal())}</span>
                   </div>
+                  {cart.some(item => TAKEAWAY_CATEGORIES.includes(item.menuItem.category)) && (
+                    <button
+                      type="button"
+                      onClick={() => setIsTakeaway(!isTakeaway)}
+                      className={cn(
+                        'mt-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 p-3 text-sm font-medium transition-colors',
+                        isTakeaway
+                          ? 'border-orange-500 bg-orange-50 text-orange-700'
+                          : 'border-muted text-muted-foreground'
+                      )}
+                    >
+                      <PackageOpen className="h-4 w-4" />
+                      {isTakeaway ? 'Takeaway' : 'Takeaway?'}
+                    </button>
+                  )}
                   <Button
                     className="mt-4 w-full min-h-[44px]"
                     onClick={submitOrder}
