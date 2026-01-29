@@ -18,7 +18,7 @@ interface CartItem {
 }
 
 // Categories in display order
-const CATEGORIES = ['Noodles', 'Dumplings', 'Bread', 'Halim', 'Fried Rice'];
+const CATEGORIES = ['Noodles', 'Demi', 'Dumplings', 'Bread', 'Halim', 'Fried Rice'];
 
 function formatPrice(priceInCents: number): string {
   return `Rs ${(priceInCents / 100).toFixed(0)}`;
