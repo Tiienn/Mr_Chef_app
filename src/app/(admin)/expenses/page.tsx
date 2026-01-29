@@ -82,15 +82,22 @@ function formatDate(dateString: string): string {
   });
 }
 
+function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function getTodayDateString(): string {
-  return new Date().toISOString().split('T')[0];
+  return toLocalDateString(new Date());
 }
 
 function getDefaultDateRange(): { startDate: string; endDate: string } {
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   return {
-    startDate: startOfMonth.toISOString().split('T')[0],
+    startDate: toLocalDateString(startOfMonth),
     endDate: getTodayDateString(),
   };
 }
@@ -204,10 +211,10 @@ export default function ExpensesPage() {
   const handleApplyDateRange = () => {
     if (tempDateRange?.from) {
       setDateRange({
-        startDate: tempDateRange.from.toISOString().split('T')[0],
+        startDate: toLocalDateString(tempDateRange.from),
         endDate: tempDateRange.to
-          ? tempDateRange.to.toISOString().split('T')[0]
-          : tempDateRange.from.toISOString().split('T')[0],
+          ? toLocalDateString(tempDateRange.to)
+          : toLocalDateString(tempDateRange.from),
       });
     }
     setIsDateDialogOpen(false);
