@@ -1,49 +1,31 @@
-# Add Push Notifications (Like WhatsApp)
-
-## Goal
-Kitchen devices receive notification sound + notification bar alert when new orders are placed, even when phone is locked or browser is closed.
-
-## Approach
-Use **Web Push API with VAPID keys** (no Firebase needed). This requires:
-1. Service worker to receive push events in background
-2. Push subscription stored in database
-3. Backend sends push when order is created
+# Add Wages Feature
 
 ## Tasks
-- [ ] Install `web-push` package
-- [ ] Generate VAPID keys and add to env vars
-- [ ] Create database table for push subscriptions
-- [ ] Create service worker (`public/sw.js`)
-- [ ] Create API endpoint to save push subscriptions (`/api/push/subscribe`)
-- [ ] Update Kitchen page to request push permission and subscribe
-- [ ] Update Orders POST to send push notification when order created
-- [ ] Add PWA manifest for installable app
-- [ ] Test on mobile device
+- [x] Add `wages` table to schema (`src/db/schema.ts`)
+- [x] Create wages API route (`src/app/api/wages/route.ts`)
+- [x] Create wages page (`src/app/(admin)/wages/page.tsx`)
+- [x] Add route protection in middleware
+- [x] Add Wages card to home page navigation
+- [x] Push schema to Turso database
+- [x] Verify build passes
 
-## Technical Details
+## Review
 
-### VAPID Keys
-- Generate once: `npx web-push generate-vapid-keys`
-- Store in env: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL`
+### Summary of Changes
+Five files were modified/created to add wage payment tracking:
 
-### Database Schema Addition
-```sql
-CREATE TABLE push_subscriptions (
-  id INTEGER PRIMARY KEY,
-  endpoint TEXT NOT NULL UNIQUE,
-  p256dh TEXT NOT NULL,
-  auth TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+1. **`src/db/schema.ts`** — Added `wages` table (id, staffId FK, amount in cents, date, note, createdAt), `wagesRelations`, updated `staffRelations` to include wages, exported `Wage` and `NewWage` types.
 
-### Service Worker
-- Listens for 'push' events
-- Shows notification with sound
-- Handles notification click (opens kitchen page)
+2. **`src/app/api/wages/route.ts`** (new) — GET with date range filtering, joins staff name, returns totals per staff member + grand total. POST validates staffId/amount/date and creates entry. DELETE removes by id.
 
-### Flow
-1. Kitchen page loads → requests notification permission
-2. If granted → subscribes to push → saves subscription to DB
-3. Customer places order → backend sends push to all subscriptions
-4. Service worker receives push → shows notification with sound
+3. **`src/app/(admin)/wages/page.tsx`** (new) — Staff dropdown, amount input (Rs), date picker (defaults today), optional note field. Shows payment list with staff name, date, amount. Totals by staff + grand total card. Date range filter. Follows same patterns as expenses page.
+
+4. **`src/middleware.ts`** — Added `/wages` to `protectedRoutes` array and `/wages/:path*` to matcher config.
+
+5. **`src/app/page.tsx`** — Added Wages nav card with Banknote icon (green color scheme).
+
+### Notes
+- Amount stored in cents (same as expenses), displayed as `Rs X`
+- Wages table is separate from the existing "wages" category in expenses — this tracks individual staff payments
+- Schema pushed to Turso successfully
+- Build passes with no errors

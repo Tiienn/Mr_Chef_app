@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Receipt,
   Users,
+  Banknote,
 } from 'lucide-react';
 
 const navItems = [
@@ -49,6 +50,14 @@ const navItems = [
     icon: Users,
     color: 'text-slate-600',
     bgColor: 'bg-slate-500/10',
+  },
+  {
+    title: 'Wages',
+    description: 'Track staff wage payments',
+    href: '/wages',
+    icon: Banknote,
+    color: 'text-green-600',
+    bgColor: 'bg-green-500/10',
   },
 ];
 

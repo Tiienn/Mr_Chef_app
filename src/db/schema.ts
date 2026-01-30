@@ -78,6 +78,16 @@ export const dailyBalance = sqliteTable('daily_balance', {
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
+// Wages table
+export const wages = sqliteTable('wages', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  staffId: integer('staff_id').notNull().references(() => staff.id),
+  amount: integer('amount').notNull(),
+  date: text('date').notNull(),
+  note: text('note'),
+  createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
+});
+
 // Push subscriptions table (for web push notifications)
 export const pushSubscriptions = sqliteTable('push_subscriptions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -109,11 +119,19 @@ export const menuItemsRelations = relations(menuItems, ({ many }) => ({
 
 export const staffRelations = relations(staff, ({ many }) => ({
   attendance: many(attendance),
+  wages: many(wages),
 }));
 
 export const attendanceRelations = relations(attendance, ({ one }) => ({
   staff: one(staff, {
     fields: [attendance.staffId],
+    references: [staff.id],
+  }),
+}));
+
+export const wagesRelations = relations(wages, ({ one }) => ({
+  staff: one(staff, {
+    fields: [wages.staffId],
     references: [staff.id],
   }),
 }));
@@ -145,3 +163,6 @@ export type NewDailyBalance = typeof dailyBalance.$inferInsert;
 
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type NewPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+export type Wage = typeof wages.$inferSelect;
+export type NewWage = typeof wages.$inferInsert;
